@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
-from parse_txt import parse_purchase_order_text
+from parse_txt import load_input_text, parse_purchase_order_text
 from workflow.models import PurchaseOrder
 
 try:
@@ -82,8 +82,7 @@ class TxtEmailConnector(EmailConnectorBase):
         resolved = self._resolve_path(path)
         if not resolved.exists():
             raise FileNotFoundError(f"Email input file not found: {resolved}")
-        path = resolved
-        return path.read_text(encoding="utf-8", errors="replace")
+        return load_input_text(resolved)
 
     def extract_purchase_order(self, path: Path | None = None) -> dict[str, Any]:
         raw = self.read_text(path)

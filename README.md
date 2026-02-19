@@ -104,7 +104,7 @@ python src\parse_txt.py tests\attention_suite\input\no_flags.txt
 ## Test Suite Convention
 
 - Use `tests/<suite_name>/` for each suite.
-- Put one or more PO docs at `tests/<suite_name>/input/*.txt`.
+- Put one or more PO docs at `tests/<suite_name>/input/*.(txt|pdf)`.
 - Parsed outputs go to `tests/<suite_name>/parsed/`.
 - Alert outputs go to `tests/<suite_name>/alerts/`.
 - Optional DAG config at `tests/<suite_name>/dependencies.json`.

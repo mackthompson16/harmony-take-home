@@ -71,13 +71,13 @@ def discover_purchase_orders(tests_root: Path, suite_name: str | None = None) ->
     tasks: dict[str, PurchaseOrder] = {}
     if suite_name is not None:
         suite_dir = tests_root / suite_name
-        txt_paths = sorted(suite_dir.glob("input/*.txt"))
+        txt_paths = sorted(suite_dir.glob("input/*.txt")) + sorted(suite_dir.glob("input/*.pdf"))
         if not txt_paths:
-            txt_paths = sorted(suite_dir.glob("*.txt"))
+            txt_paths = sorted(suite_dir.glob("*.txt")) + sorted(suite_dir.glob("*.pdf"))
     else:
-        txt_paths = sorted(tests_root.glob("*/input/*.txt"))
+        txt_paths = sorted(tests_root.glob("*/input/*.txt")) + sorted(tests_root.glob("*/input/*.pdf"))
         if not txt_paths:
-            txt_paths = sorted(tests_root.glob("*/*.txt"))
+            txt_paths = sorted(tests_root.glob("*/*.txt")) + sorted(tests_root.glob("*/*.pdf"))
 
     for txt_path in txt_paths:
         current_suite_name = txt_path.parent.parent.name if txt_path.parent.name == "input" else txt_path.parent.name

@@ -4,6 +4,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+try:
+    from pypdf import PdfReader  # type: ignore
+except ImportError:
+    PdfReader = None
+
 
 LABEL_PATTERN = re.compile(r"^(?P<label>[A-Za-z][A-Za-z ]+):\s*(?P<value>.*)$")
 LINE_ITEM_PATTERN = re.compile(
@@ -244,6 +249,24 @@ def parse_purchase_order_text(text: str) -> dict[str, Any]:
     }
 
 
+def extract_text_from_pdf(path: Path) -> str:
+    if PdfReader is None:
+        raise RuntimeError("PDF input requires pypdf. Install with: pip install pypdf")
+
+    reader = PdfReader(str(path))
+    pages: list[str] = []
+    for page in reader.pages:
+        pages.append(page.extract_text() or "")
+    return "\n".join(pages)
+
+
+def load_input_text(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        return extract_text_from_pdf(path)
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
 def default_input_path() -> Path:
     root = Path(__file__).resolve().parent.parent
     preferred = [root / "text1.txt", root / "tests" / "test1" / "test1.txt"]
@@ -259,7 +282,7 @@ def main() -> None:
         "input_path",
         nargs="?",
         default=str(default_input_path()),
-        help="Path to the purchase-order text file.",
+        help="Path to the purchase-order input file (.txt or .pdf).",
     )
     parser.add_argument(
         "--output",
@@ -269,7 +292,7 @@ def main() -> None:
     args = parser.parse_args()
 
     input_path = Path(args.input_path)
-    text = input_path.read_text(encoding="utf-8", errors="replace")
+    text = load_input_text(input_path)
     parsed = parse_purchase_order_text(text)
     output_path = (
         Path(args.output)
