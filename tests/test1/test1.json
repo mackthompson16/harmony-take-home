@@ -1,0 +1,76 @@
+{
+  "email": {
+    "subject": "URGENT: Purchase Order #PO-2025-0472 \u2014 Glass Bottle Labels (Expedited)",
+    "from": "maria.chen@acmeprocurement.com",
+    "to": "orders@yourmfg.com",
+    "date": "Wed, 18 Jun 2025 09:14:33 -0500"
+  },
+  "message_intro": [
+    "Hi Team,",
+    "Please process the following purchase order at your earliest convenience.",
+    "This is flagged as urgent due to a production line deadline."
+  ],
+  "purchase_order": {
+    "po_number": "PO-2025-0472",
+    "vendor": "Precision Label Co.",
+    "ship_to": {
+      "name": "Acme Procurement Inc.",
+      "address_lines": [
+        "4200 Industrial Blvd, Suite 110",
+        "Chattanooga, TN 37410"
+      ],
+      "full": "Acme Procurement Inc., 4200 Industrial Blvd, Suite 110, Chattanooga, TN 37410"
+    },
+    "order_date": "2025-06-18",
+    "due_date": "2025-06-25",
+    "payment_terms": "Net 30",
+    "line_items": [
+      {
+        "item_no": 1,
+        "description": "Custom Wraparound Labels",
+        "qty": 10000,
+        "unit_price": 0.85,
+        "total": 8500.0
+      },
+      {
+        "item_no": 2,
+        "description": "Shrink Sleeve Labels (12oz)",
+        "qty": 5000,
+        "unit_price": 1.2,
+        "total": 6000.0
+      },
+      {
+        "item_no": 3,
+        "description": "Tamper-Evident Neck Bands",
+        "qty": 8000,
+        "unit_price": 0.35,
+        "total": 2800.0
+      }
+    ],
+    "totals": {
+      "subtotal": 17300.0,
+      "tax": {
+        "rate": "9.25%",
+        "amount": 1600.25
+      },
+      "shipping": 450.0,
+      "total": 19350.25
+    },
+    "notes": [
+      "Delivery MUST arrive by June 25th \u2014 our bottling line is scheduled for June 26th.",
+      "Please confirm receipt of this PO within 24 hours.",
+      "Quality cert required for all label stock."
+    ],
+    "contact": {
+      "name": "Maria Chen",
+      "title": "Senior Procurement Manager",
+      "company": null,
+      "phone": null,
+      "email": null,
+      "raw_lines": [
+        "Maria Chen",
+        "Senior Procurement Manager"
+      ]
+    }
+  }
+}

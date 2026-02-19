@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: harmony-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: harmony
+      POSTGRES_USER: harmony
+      POSTGRES_PASSWORD: harmony
+    ports:
+      - "5433:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+      - ../:/work:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U harmony -d harmony"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  dbcli:
+    image: postgres:16
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: harmony
+      PGPASSWORD: harmony
+      PGDATABASE: harmony
+    entrypoint: ["psql"]
+    volumes:
+      - ../:/work:ro
+
+volumes:
+  pg_data:

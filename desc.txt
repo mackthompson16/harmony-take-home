@@ -1,0 +1,111 @@
+The Assignment
+Build a workflow orchestration engine that can:
+Define and execute workflows as DAGs (directed acyclic graphs)
+Manage task state persistently using Postgres
+Support a connector interface (abstract base class) that cleanly separates task execution from orchestration
+Include two working connectors:
+Email connector — reads an email from a local .txt file (at minimum) to simulate an inbox. .pdf attachments  support is a bonus.
+Database connector — creates, upserts, and queries rows in Postgres (e.g., a purchase_orders table)
+Run a demo workflow: Read a purchase-order email (from a local file) → extract PO fields → upsert into database → if it needs attention, write po_alert.json
+
+Functional Requirements
+1. Workflow Loading & Visibility
+The engine should be able to display previous workflow runs and currently running workflows 
+So a user can see both historical and active state at a glance.
+2. DAG Execution
+Execute a task only when all upstream dependencies have reached SUCCESS.
+A workflow run must stop on the first FAILED task (or clearly document any alternative behavior you choose).
+3. Persistent Task State
+Persist all task state transitions in Postgres.
+Valid state transitions: PENDING → RUNNING → SUCCESS | FAILED
+States must survive process restarts,  they cannot live only in memory.
+4. Task Outputs
+Each task must be able to produce an output payload (e.g., a JSON-serializable dict) that downstream tasks can consume. (You can design this however you deem best)
+5. Email Connector (Simulated Inbox)
+Reads an email from a local file. At minimum, support .txt format. Support for attachemnts (pdf) parsing is a bonus.
+6. Database Connector
+Operates against Postgres.
+Supports create, upsert, and query operations on rows (e.g., a purchase_orders table).
+7. Demo Workflow Behavior
+The end-to-end demo must perform this pipeline:
+Read PO email → Extract PO fields → Upsert PO row → Check if needs attention → Write po_alert.json
+
+"Needs attention" logic must be deterministic. Examples of valid triggers:
+Amount exceeds a threshold
+Due date is within N days
+Subject contains "urgent"
+Required fields are missing
+If flagged, write a po_alert.json file containing:
+{
+  "po_number": "...",
+  "reasons": ["..."],
+  "fields": { },
+  "timestamp": "..."
+}
+
+A sample PO email is provided (see sample_po_email.txt). Use this file for your demo run.
+8. Retries
+Implement a simple retry mechanism: retry the full task execution up to N times before marking it as FAILED. No complex backoff, circuit-breaking, or per-connector retry configuration is needed.
+9. Run Visibility (Console Only)
+Console output must clearly show:
+Task start and end
+State transitions (PENDING → RUNNING → SUCCESS)
+Failures with error messages
+Final workflow status (e.g., COMPLETED or FAILED)
+
+Explicitly Out of Scope
+Do not build any of the following:
+No distributed workers — threads/processes are fine, but no network-based worker setup
+No complex retry logic — simple "retry N times" is sufficient
+
+Deliverables
+#
+Deliverable
+Description
+1
+GitHub repo
+Clean project structure
+2
+README.md
+Setup/run instructions + architectural decisions
+3
+ASSUMPTIONS.md
+Trade-offs made and why
+4
+Working demo
+The PO email → DB update scenario, runnable end to end
+5
+Optional (impressive)
+Tests, Loom video walkthrough (< 5 min)
+
+
+
+Evaluation Criteria
+I care most about your judgment, structure, and clarity of thinking. If you make assumptions, write them down.
+
+sample_po_email.txt
+Subject: URGENT: Purchase Order #PO-2025-0472 — Glass Bottle Labels (Expedited)
+From: maria.chen@acmeprocurement.com To: orders@yourmfg.com Date: Wed, 18 Jun 2025 09:14:33 -0500
+Hi Team,
+Please process the following purchase order at your earliest convenience. This is flagged as urgent due to a production line deadline.
+
+PURCHASE ORDER
+PO Number: PO-2025-0472 Vendor: Precision Label Co. Ship To: Acme Procurement Inc. 4200 Industrial Blvd, Suite 110 Chattanooga, TN 37410
+Order Date: 2025-06-18 Due Date: 2025-06-25 Payment Terms: Net 30
+
+LINE ITEMS
+Item Description Qty Unit Price Total 1 Custom Wraparound Labels 10,000 $0.85 $8,500.00 2 Shrink Sleeve Labels (12oz) 5,000 $1.20 $6,000.00 3 Tamper-Evident Neck Bands 8,000 $0.35 $2,800.00
+
+                       Subtotal:     $17,300.00
+                        Tax (9.25%):  $1,600.25
+                        Shipping:     $450.00
+                        TOTAL:        $19,350.25
+
+Notes:
+Delivery MUST arrive by June 25th — our bottling line is scheduled for June 26th.
+Please confirm receipt of this PO within 24 hours.
+Quality cert required for all label stock.
+Thank you, Maria Chen Senior Procurement Manager Acme Procurement Inc. (423) 555-0198 maria.chen@acmeprocurement.com
+
+
+
