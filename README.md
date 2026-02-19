@@ -10,16 +10,36 @@ Minimal workflow engine for purchase-order ingestion:
 
 ## Project Layout
 
-- `src/parse_txt.py`: deterministic `.txt` -> JSON parser
-- `src/run_workflow.py`: workflow entrypoint
-- `src/workflow/models.py`: purchase-order model/state
-- `src/workflow/connectors.py`: abstract connector interfaces + txt/postgres connector implementations
-- `src/workflow/dag.py`: discovery, dependencies, topological execution order
-- `src/workflow/alerts.py`: deterministic attention rules + alert writer
-- `db/docker-compose.yml`: Postgres + `dbcli` runner
-- `db/init/001_schema.sql`: purchase order schema + upsert function
-- `db/init/002_workflow.sql`: workflow run/task state tables + transition funcs
-- `db/queries/*.sql`: helper SQL for load/query/visibility
+```text
+harmony-take-home/
+|-- src/
+|   |-- parse_txt.py                  # txt -> structured JSON
+|   |-- run_workflow.py               # workflow entrypoint (optionally per suite)
+|   `-- workflow/
+|       |-- connectors.py             # connector ABCs + txt/postgres implementations
+|       |-- dag.py                    # discovery + dependency graph + topological sort
+|       |-- alerts.py                 # deterministic attention rules + alert writer
+|       `-- models.py                 # PurchaseOrder model + state
+|-- db/
+|   |-- docker-compose.yml            # postgres + dbcli
+|   |-- init/
+|   |   |-- 001_schema.sql            # PO schema + upsert function
+|   |   `-- 002_workflow.sql          # workflow/task states + transitions
+|   `-- queries/
+|       |-- 01_load_test1_json.sql
+|       |-- 02_get_purchase_order.sql
+|       |-- 03_needs_attention.sql
+|       `-- 04_workflow_visibility.sql
+`-- tests/
+    |-- <suite_name>/
+    |   |-- input/                    # source PO txt files
+    |   |-- parsed/                   # generated parsed JSON
+    |   |-- alerts/                   # generated alert payloads
+    |   `-- dependencies.json         # optional DAG config
+    |-- attention_suite/
+    |-- order_success_then_fail/
+    `-- order_fail_first/
+```
 
 ## Prereqs
 
