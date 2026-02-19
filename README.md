@@ -49,7 +49,7 @@ harmony-take-home/
 
 Example:
 ```powershell
-pip install psycopg[binary]
+pip install psycopg[binary] pypdf
 ```
 
 ## Quick Start
