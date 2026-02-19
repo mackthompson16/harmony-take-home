@@ -1,0 +1,68 @@
+{
+  "po_number": "PO-WAIT-0002",
+  "status": "FAILED",
+  "reasons": [
+    "missing_fields"
+  ],
+  "fields": {
+    "email": {
+      "subject": "Purchase Order #PO-WAIT-0002",
+      "from": "qa.team@example.com",
+      "to": "orders@yourmfg.com",
+      "date": "Thu, 19 Feb 2026 12:05:00 -0500"
+    },
+    "message_intro": [
+      "Hello,",
+      "Please process this purchase order."
+    ],
+    "purchase_order": {
+      "po_number": "PO-WAIT-0002",
+      "vendor": null,
+      "ship_to": {
+        "name": "Waiting Warehouse",
+        "address_lines": [
+          "300 Main St",
+          "Austin, TX 78701"
+        ],
+        "full": "Waiting Warehouse, 300 Main St, Austin, TX 78701"
+      },
+      "order_date": "2026-02-11",
+      "due_date": "2099-12-31",
+      "payment_terms": "Net 30",
+      "line_items": [
+        {
+          "item_no": 1,
+          "description": "Upstream Missing Vendor",
+          "qty": 100,
+          "unit_price": 1.0,
+          "total": 100.0
+        }
+      ],
+      "totals": {
+        "subtotal": 100.0,
+        "tax": {
+          "rate": "0.00%",
+          "amount": 0.0
+        },
+        "shipping": 10.0,
+        "total": 110.0
+      },
+      "notes": [
+        "Missing fields should fail and block middle."
+      ],
+      "contact": {
+        "name": "QA Team",
+        "title": "Procurement Analyst",
+        "company": null,
+        "phone": null,
+        "email": null,
+        "raw_lines": [
+          "QA Team",
+          "Procurement Analyst"
+        ]
+      }
+    }
+  },
+  "timestamp": "2026-02-19T22:38:55.229175+00:00",
+  "error": "missing_fields"
+}

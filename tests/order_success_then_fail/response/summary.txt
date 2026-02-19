@@ -1,0 +1,5 @@
+Suite: order_success_then_fail
+Status: FAILED
+Execution:
+1. good_first | SUCCESS | flags=none | po=PO-SHARED-1001
+2. bad_missing_po | FAILED | flags=task_execution_failed | po=N/A | error=null value in column "po_number" of relation "purchase_orders" violates not-null constraint DETAIL: Failing row conta...

@@ -1,9 +1,10 @@
 import argparse
 import json
 import os
+from collections import defaultdict
 from pathlib import Path
 
-from workflow.alerts import needs_attention, write_alert
+from workflow.alerts import failure_flags, needs_attention, write_alert, write_suite_response_summary
 from workflow.connectors import DatabaseConnector, EmailConnector
 from workflow.dag import discover_purchase_orders, load_dependencies, topo_sort
 
@@ -35,16 +36,51 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
     db.transition_workflow(workflow_run_id, "RUNNING")
 
     completed: dict[str, str] = {}
+    execution_events: list[dict[str, object]] = []
+    workflow_failed = False
 
-    for task_name in order:
+    def record_event(
+        task_id: str,
+        status: str,
+        reasons: list[str],
+        po_number: str | None = None,
+        error_message: str | None = None,
+    ) -> None:
+        suite_name, task_name = task_id.split("/", 1)
+        execution_events.append(
+            {
+                "suite": suite_name,
+                "task": task_name,
+                "status": status,
+                "reasons": reasons,
+                "po_number": po_number,
+                "error": error_message,
+            }
+        )
+
+    def write_all_suite_summaries() -> None:
+        grouped: dict[str, list[dict[str, object]]] = defaultdict(list)
+        for event in execution_events:
+            grouped[str(event["suite"])].append(event)
+        for suite_name, events in grouped.items():
+            suite_dir = tests_root / suite_name
+            write_suite_response_summary(suite_dir, suite_name, events)
+
+    for index, task_name in enumerate(order):
         po = tasks[task_name]
+        print(f"TASK START: {task_name}")
         unmet = [dep for dep in po.dependencies if completed.get(dep) != "SUCCESS"]
         if unmet:
             message = f"Dependencies not satisfied for {task_name}: {', '.join(unmet)}"
-            print(f"{task_name}: FAILED ({message})")
-            write_alert(po, "FAILED", ["dependencies_not_satisfied"], message)
-            db.transition_workflow(workflow_run_id, "FAILED", message)
-            return 1
+            unmet_failed = any(completed.get(dep) == "FAILED" for dep in unmet)
+            pending_flag = "waiting_on_upstream" if unmet_failed else "waiting_on_dependency"
+            print(f"{task_name}: PENDING ({pending_flag})")
+            write_alert(po, "PENDING", [pending_flag], message)
+            po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
+            record_event(task_name, "PENDING", [pending_flag], po_number, message)
+            completed[task_name] = "PENDING"
+            print(f"TASK END: {task_name} -> PENDING")
+            continue
 
         try:
             po.req = email.extract_purchase_order(po.txt_path)
@@ -56,11 +92,26 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
             print(f"{task_name}: PENDING -> RUNNING")
             db.transition_purchase_order(po_run_id, "RUNNING")
 
+            precheck_reasons = needs_attention(po.req)
+            precheck_failures = failure_flags(precheck_reasons)
+            if precheck_failures:
+                error_message = ",".join(precheck_failures)
+                db.transition_purchase_order(po_run_id, "FAILED", error_message)
+                po.state = "FAILED"
+                completed[task_name] = "FAILED"
+                workflow_failed = True
+                write_alert(po, "FAILED", precheck_reasons, error_message)
+                po_number = (po.req.get("purchase_order") or {}).get("po_number")
+                record_event(task_name, "FAILED", precheck_reasons, po_number, error_message)
+                print(f"{task_name}: RUNNING -> FAILED ({error_message})")
+                print(f"TASK END: {task_name} -> FAILED")
+                continue
+
             for attempt in range(1, max_retries + 2):
                 db.set_attempts(po_run_id, attempt)
                 try:
                     po_id = db.upsert_purchase_order(po.req)
-                    reasons = needs_attention(po.req)
+                    reasons = precheck_reasons
                     po_number = (po.req.get("purchase_order") or {}).get("po_number") or task_name
 
                     if reasons:
@@ -74,7 +125,10 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
                     po.state = "SUCCESS"
                     completed[task_name] = "SUCCESS"
                     write_alert(po, "SUCCESS", reasons)
+                    po_number = (po.req.get("purchase_order") or {}).get("po_number")
+                    record_event(task_name, "SUCCESS", reasons, po_number)
                     print(f"{task_name}: RUNNING -> SUCCESS")
+                    print(f"TASK END: {task_name} -> SUCCESS")
                     break
                 except Exception as exc:  # noqa: BLE001
                     error_message = str(exc)
@@ -85,22 +139,34 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
                     db.transition_purchase_order(po_run_id, "FAILED", error_message)
                     po.state = "FAILED"
                     completed[task_name] = "FAILED"
+                    workflow_failed = True
                     write_alert(po, "FAILED", ["task_execution_failed"], error_message)
+                    po_number = (po.req.get("purchase_order") or {}).get("po_number")
+                    record_event(task_name, "FAILED", ["task_execution_failed"], po_number, error_message)
                     print(f"{task_name}: RUNNING -> FAILED ({error_message})")
-                    db.transition_workflow(workflow_run_id, "FAILED", error_message)
-                    return 1
+                    print(f"TASK END: {task_name} -> FAILED")
+                    break
         except Exception as exc:  # noqa: BLE001
             message = str(exc)
             po.state = "FAILED"
             completed[task_name] = "FAILED"
+            workflow_failed = True
             write_alert(po, "FAILED", ["task_setup_failed"], message)
+            po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
+            record_event(task_name, "FAILED", ["task_setup_failed"], po_number, message)
             print(f"{task_name}: FAILED ({message})")
-            db.transition_workflow(workflow_run_id, "FAILED", message)
-            return 1
+            print(f"TASK END: {task_name} -> FAILED")
+            continue
 
-    db.transition_workflow(workflow_run_id, "SUCCESS")
-    print(f"Workflow run {workflow_run_id} completed: SUCCESS")
-    return 0
+    if workflow_failed:
+        db.transition_workflow(workflow_run_id, "FAILED", "one_or_more_tasks_failed")
+        final_status = "FAILED"
+    else:
+        db.transition_workflow(workflow_run_id, "SUCCESS")
+        final_status = "COMPLETED"
+    write_all_suite_summaries()
+    print(f"Final workflow status: {final_status}")
+    return 1 if workflow_failed else 0
 
 
 if __name__ == "__main__":

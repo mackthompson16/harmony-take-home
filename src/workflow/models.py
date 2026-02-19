@@ -10,6 +10,7 @@ VALID_STATES = {"PENDING", "RUNNING", "SUCCESS", "FAILED"}
 class PurchaseOrder:
     name: str
     txt_path: Path
+    attention_priority_hint: int = 2
     order_date_hint: date | None = None
     req: dict[str, Any] | None = None
     state: str = "PENDING"
@@ -32,3 +33,7 @@ class PurchaseOrder:
     @property
     def alert_path(self) -> Path:
         return self.test_dir / "alerts" / f"{self.txt_path.stem}.alerts.json"
+
+    @property
+    def response_path(self) -> Path:
+        return self.test_dir / "response" / f"{self.txt_path.stem}.response.txt"

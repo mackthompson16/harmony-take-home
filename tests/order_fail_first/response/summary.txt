@@ -1,0 +1,5 @@
+Suite: order_fail_first
+Status: FAILED
+Execution:
+1. bad_missing_po | FAILED | flags=task_execution_failed | po=N/A | error=null value in column "po_number" of relation "purchase_orders" violates not-null constraint DETAIL: Failing row conta...
+2. good_first | PENDING | flags=not_executed_due_to_upstream_failure | po=N/A

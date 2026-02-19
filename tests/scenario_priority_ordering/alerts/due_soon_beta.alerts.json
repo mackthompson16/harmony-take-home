@@ -1,0 +1,67 @@
+{
+  "po_number": "PO-PRIO-0002",
+  "status": "SUCCESS",
+  "reasons": [
+    "due_soon"
+  ],
+  "fields": {
+    "email": {
+      "subject": "Purchase Order #PO-PRIO-0002",
+      "from": "qa.team@example.com",
+      "to": "orders@yourmfg.com",
+      "date": "Thu, 19 Feb 2026 10:05:00 -0500"
+    },
+    "message_intro": [
+      "Hello,",
+      "Please process this purchase order."
+    ],
+    "purchase_order": {
+      "po_number": "PO-PRIO-0002",
+      "vendor": "Priority Supply Co.",
+      "ship_to": {
+        "name": "Priority Warehouse",
+        "address_lines": [
+          "100 Main St",
+          "Austin, TX 78701"
+        ],
+        "full": "Priority Warehouse, 100 Main St, Austin, TX 78701"
+      },
+      "order_date": "2026-02-11",
+      "due_date": "2026-02-20",
+      "payment_terms": "Net 30",
+      "line_items": [
+        {
+          "item_no": 1,
+          "description": "Soon Labels",
+          "qty": 100,
+          "unit_price": 2.0,
+          "total": 200.0
+        }
+      ],
+      "totals": {
+        "subtotal": 200.0,
+        "tax": {
+          "rate": "0.00%",
+          "amount": 0.0
+        },
+        "shipping": 10.0,
+        "total": 210.0
+      },
+      "notes": [
+        "Due soon should be second priority."
+      ],
+      "contact": {
+        "name": "QA Team",
+        "title": "Procurement Analyst",
+        "company": null,
+        "phone": null,
+        "email": null,
+        "raw_lines": [
+          "QA Team",
+          "Procurement Analyst"
+        ]
+      }
+    }
+  },
+  "timestamp": "2026-02-19T22:38:46.750181+00:00"
+}

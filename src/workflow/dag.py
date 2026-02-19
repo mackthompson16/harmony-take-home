@@ -3,7 +3,8 @@ import re
 from datetime import date
 from pathlib import Path
 
-from parse_txt import load_input_text
+from parse_txt import load_input_text, parse_purchase_order_text
+from workflow.alerts import needs_attention, priority_rank
 from workflow.models import PurchaseOrder
 
 ORDER_DATE_PATTERN = re.compile(r"^Order Date:\s*(\d{4}-\d{2}-\d{2})\s*$", re.IGNORECASE | re.MULTILINE)
@@ -22,6 +23,16 @@ def extract_order_date_hint(path: Path) -> date | None:
         return date.fromisoformat(match.group(1))
     except ValueError:
         return None
+
+
+def derive_attention_priority_hint(path: Path) -> int:
+    try:
+        raw = load_input_text(path)
+        payload = parse_purchase_order_text(raw)
+        reasons = needs_attention(payload)
+    except Exception:
+        return 4
+    return priority_rank(reasons)
 
 
 def load_dependencies(tests_root: Path, task_names: list[str], suite_name: str | None = None) -> dict[str, list[str]]:
@@ -70,9 +81,10 @@ def topo_sort(tasks: dict[str, PurchaseOrder]) -> list[str]:
             indegree[name] += 1
             children[dep].append(name)
 
-    def task_sort_key(task_name: str) -> tuple[bool, date, str]:
+    def task_sort_key(task_name: str) -> tuple[int, bool, date, str]:
         task = tasks[task_name]
         return (
+            task.attention_priority_hint,
             task.order_date_hint is None,
             task.order_date_hint or date.max,
             task_name,
@@ -113,6 +125,7 @@ def discover_purchase_orders(tests_root: Path, suite_name: str | None = None) ->
         tasks[task_name] = PurchaseOrder(
             name=task_name,
             txt_path=txt_path,
+            attention_priority_hint=derive_attention_priority_hint(txt_path),
             order_date_hint=extract_order_date_hint(txt_path),
         )
     return tasks

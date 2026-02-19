@@ -1,8 +1,8 @@
 {
   "po_number": "PO-SUITE-0003",
-  "status": "SUCCESS",
+  "status": "FAILED",
   "reasons": [
-    "amount_exceeds_threshold"
+    "exceeds_threshold"
   ],
   "fields": {
     "email": {
@@ -70,5 +70,6 @@
       }
     }
   },
-  "timestamp": "2026-02-19T21:57:58.810460+00:00"
+  "timestamp": "2026-02-19T22:36:06.442617+00:00",
+  "error": "exceeds_threshold"
 }

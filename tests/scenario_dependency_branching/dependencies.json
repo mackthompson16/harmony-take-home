@@ -1,0 +1,6 @@
+{
+  "parent_exceeds": ["root_urgent"],
+  "child_blocked": ["parent_exceeds"],
+  "parallel_after_root": ["root_urgent"],
+  "tail_after_parallel": ["parallel_after_root"]
+}

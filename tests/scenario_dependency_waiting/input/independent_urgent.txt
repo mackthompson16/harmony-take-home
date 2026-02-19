@@ -1,0 +1,35 @@
+Subject: URGENT: Purchase Order #PO-WAIT-0001
+From: qa.team@example.com
+To: orders@yourmfg.com
+Date: Thu, 19 Feb 2026 12:00:00 -0500
+
+Hello,
+
+Please process this purchase order.
+
+PURCHASE ORDER
+PO Number: PO-WAIT-0001
+Vendor: Waiting Supply Co.
+Ship To: Waiting Warehouse
+300 Main St
+Austin, TX 78701
+
+Order Date: 2026-02-10
+Due Date: 2099-12-31
+Payment Terms: Net 30
+
+LINE ITEMS
+Item Description Qty Unit Price Total
+1 Independent Labels 100 $1.00 $100.00
+
+Subtotal: $100.00
+Tax (0.00%): $0.00
+Shipping: $10.00
+TOTAL: $110.00
+
+Notes:
+Independent urgent task should still run.
+
+Thank you,
+QA Team
+Procurement Analyst

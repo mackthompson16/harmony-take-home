@@ -1,0 +1,10 @@
+{
+  "po_number": null,
+  "status": "PENDING",
+  "reasons": [
+    "waiting_on_dependency"
+  ],
+  "fields": {},
+  "timestamp": "2026-02-19T22:38:55.230917+00:00",
+  "error": "Dependencies not satisfied for scenario_dependency_waiting/downstream_dep: scenario_dependency_waiting/middle_dep"
+}

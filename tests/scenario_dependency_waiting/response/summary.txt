@@ -1,0 +1,7 @@
+Suite: scenario_dependency_waiting
+Status: FAILED
+Execution:
+1. independent_urgent | SUCCESS | flags=urgent | po=PO-WAIT-0001
+2. upstream_fail | FAILED | flags=missing_fields | po=PO-WAIT-0002 | error=missing_fields
+3. middle_dep | PENDING | flags=waiting_on_upstream | po=N/A | error=Dependencies not satisfied for scenario_dependency_waiting/middle_dep: scenario_dependency_waiting/upstream_fail
+4. downstream_dep | PENDING | flags=waiting_on_dependency | po=N/A | error=Dependencies not satisfied for scenario_dependency_waiting/downstream_dep: scenario_dependency_waiting/middle_dep

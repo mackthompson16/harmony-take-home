@@ -1,0 +1,10 @@
+{
+  "po_number": null,
+  "status": "PENDING",
+  "reasons": [
+    "waiting_on_upstream"
+  ],
+  "fields": {},
+  "timestamp": "2026-02-19T22:38:55.204889+00:00",
+  "error": "Dependencies not satisfied for scenario_dependency_branching/child_blocked: scenario_dependency_branching/parent_exceeds"
+}

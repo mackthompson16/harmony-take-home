@@ -1,0 +1,67 @@
+{
+  "po_number": "PO-BRANCH-0001",
+  "status": "SUCCESS",
+  "reasons": [
+    "urgent"
+  ],
+  "fields": {
+    "email": {
+      "subject": "URGENT: Purchase Order #PO-BRANCH-0001",
+      "from": "qa.team@example.com",
+      "to": "orders@yourmfg.com",
+      "date": "Thu, 19 Feb 2026 11:00:00 -0500"
+    },
+    "message_intro": [
+      "Hello,",
+      "Please process this purchase order."
+    ],
+    "purchase_order": {
+      "po_number": "PO-BRANCH-0001",
+      "vendor": "Branch Supply Co.",
+      "ship_to": {
+        "name": "Branch Warehouse",
+        "address_lines": [
+          "200 Main St",
+          "Austin, TX 78701"
+        ],
+        "full": "Branch Warehouse, 200 Main St, Austin, TX 78701"
+      },
+      "order_date": "2026-02-10",
+      "due_date": "2099-12-31",
+      "payment_terms": "Net 30",
+      "line_items": [
+        {
+          "item_no": 1,
+          "description": "Root Labels",
+          "qty": 100,
+          "unit_price": 1.0,
+          "total": 100.0
+        }
+      ],
+      "totals": {
+        "subtotal": 100.0,
+        "tax": {
+          "rate": "0.00%",
+          "amount": 0.0
+        },
+        "shipping": 10.0,
+        "total": 110.0
+      },
+      "notes": [
+        "Root should succeed."
+      ],
+      "contact": {
+        "name": "QA Team",
+        "title": "Procurement Analyst",
+        "company": null,
+        "phone": null,
+        "email": null,
+        "raw_lines": [
+          "QA Team",
+          "Procurement Analyst"
+        ]
+      }
+    }
+  },
+  "timestamp": "2026-02-19T22:38:55.105824+00:00"
+}

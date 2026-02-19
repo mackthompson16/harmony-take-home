@@ -77,6 +77,12 @@ cd db
 docker compose run --rm dbcli /work/db/queries/04_workflow_visibility.sql
 ```
 
+Console output includes:
+- Task start/end
+- State transitions (`PENDING -> RUNNING -> SUCCESS|FAILED`)
+- Failure messages
+- Final workflow status (`COMPLETED` or `FAILED`)
+
 4. Stop Postgres:
 ```powershell
 docker compose down
@@ -93,6 +99,7 @@ python src\parse_txt.py tests\attention_suite\input\no_flags.txt
 
 - Parsed JSON: `tests/<suite_name>/parsed/<file>.json`
 - Alert file: `tests/<suite_name>/alerts/<file>.alerts.json`
+- Response summary: `tests/<suite_name>/response/summary.txt`
 
 `<file>.alerts.json` includes:
 - `po_number`
@@ -107,6 +114,7 @@ python src\parse_txt.py tests\attention_suite\input\no_flags.txt
 - Put one or more PO docs at `tests/<suite_name>/input/*.(txt|pdf)`.
 - Parsed outputs go to `tests/<suite_name>/parsed/`.
 - Alert outputs go to `tests/<suite_name>/alerts/`.
+- Suite follow-up summary goes to `tests/<suite_name>/response/summary.txt`.
 - Optional DAG config at `tests/<suite_name>/dependencies.json`.
 - `dependencies.json` format uses file stems:
   - `{ "file_b": ["file_a"] }` means `file_b.txt` runs after `file_a.txt`.
@@ -115,4 +123,7 @@ Example suites included:
 - `tests/attention_suite/`: attention-flag scenarios
 - `tests/order_success_then_fail/`: good PO runs first, then failing PO
 - `tests/order_fail_first/`: same files but failing PO runs first (workflow stops before good PO)
+- `tests/scenario_priority_ordering/`: no dependencies; shows priority + PO-date + alpha ordering
+- `tests/scenario_dependency_branching/`: failed branch + independent branch continues
+- `tests/scenario_dependency_waiting/`: demonstrates `waiting_on_upstream` vs `waiting_on_dependency`
 

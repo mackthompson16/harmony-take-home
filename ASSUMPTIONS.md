@@ -17,7 +17,19 @@
 
 - Explicit dependencies: `tests/<suite>/dependencies.json` (optional).
 - No dependency inference from parsed JSON.
-- If dependencies are missing: sort by PO `Order Date` (from document), then alphabetical.
+- Execution order:
+  1. dependency DAG constraints
+  2. attention priority (deterministic flag metric)
+    - metric:
+    - `0`: `urgent`
+    - `1`: `due_soon`
+    - `2`: all others (`no_flags`, `exceeds_threshold`, `missing_fields`)
+    - failure policy is separate: fail on `exceeds_threshold` or `missing_fields`
+  3. PO `Order Date`
+  4. alphabetical fallback
+- If a task fails, independent downstream tasks still run.
+- Only tasks that depend on failed tasks stay `PENDING` (`waiting_on_upstream` / `waiting_on_dependency`).
+
 
 ## Database
 

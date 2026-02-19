@@ -1,0 +1,4 @@
+{
+  "middle_dep": ["upstream_fail"],
+  "downstream_dep": ["middle_dep"]
+}

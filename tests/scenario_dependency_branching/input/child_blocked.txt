@@ -1,0 +1,35 @@
+Subject: Purchase Order #PO-BRANCH-0003
+From: qa.team@example.com
+To: orders@yourmfg.com
+Date: Thu, 19 Feb 2026 11:10:00 -0500
+
+Hello,
+
+Please process this purchase order.
+
+PURCHASE ORDER
+PO Number: PO-BRANCH-0003
+Vendor: Branch Supply Co.
+Ship To: Branch Warehouse
+200 Main St
+Austin, TX 78701
+
+Order Date: 2026-02-12
+Due Date: 2099-12-31
+Payment Terms: Net 30
+
+LINE ITEMS
+Item Description Qty Unit Price Total
+1 Child Labels 100 $1.00 $100.00
+
+Subtotal: $100.00
+Tax (0.00%): $0.00
+Shipping: $10.00
+TOTAL: $110.00
+
+Notes:
+Should remain pending due to failed dependency.
+
+Thank you,
+QA Team
+Procurement Analyst

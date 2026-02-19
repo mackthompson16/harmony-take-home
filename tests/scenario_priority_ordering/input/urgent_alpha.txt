@@ -1,0 +1,35 @@
+Subject: URGENT: Purchase Order #PO-PRIO-0001
+From: qa.team@example.com
+To: orders@yourmfg.com
+Date: Thu, 19 Feb 2026 10:00:00 -0500
+
+Hello,
+
+Please process this purchase order.
+
+PURCHASE ORDER
+PO Number: PO-PRIO-0001
+Vendor: Priority Supply Co.
+Ship To: Priority Warehouse
+100 Main St
+Austin, TX 78701
+
+Order Date: 2026-02-10
+Due Date: 2099-12-31
+Payment Terms: Net 30
+
+LINE ITEMS
+Item Description Qty Unit Price Total
+1 Urgent Labels 100 $2.00 $200.00
+
+Subtotal: $200.00
+Tax (0.00%): $0.00
+Shipping: $10.00
+TOTAL: $210.00
+
+Notes:
+Urgent should get highest priority.
+
+Thank you,
+QA Team
+Procurement Analyst

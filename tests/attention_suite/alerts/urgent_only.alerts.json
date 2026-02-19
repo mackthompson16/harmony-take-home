@@ -2,7 +2,7 @@
   "po_number": "PO-SUITE-0002",
   "status": "SUCCESS",
   "reasons": [
-    "subject_contains_urgent"
+    "urgent"
   ],
   "fields": {
     "email": {
@@ -70,5 +70,5 @@
       }
     }
   },
-  "timestamp": "2026-02-19T21:57:58.600592+00:00"
+  "timestamp": "2026-02-19T22:36:06.149425+00:00"
 }

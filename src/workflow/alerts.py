@@ -1,5 +1,7 @@
 import json
+import re
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from workflow.models import PurchaseOrder
@@ -13,7 +15,7 @@ def needs_attention(payload: dict[str, Any], amount_threshold: float = 15000.0, 
 
     total = totals.get("total")
     if isinstance(total, (int, float)) and total > amount_threshold:
-        reasons.append("amount_exceeds_threshold")
+        reasons.append("exceeds_threshold")
 
     due_date = po.get("due_date")
     if due_date:
@@ -23,7 +25,7 @@ def needs_attention(payload: dict[str, Any], amount_threshold: float = 15000.0, 
 
     subject = (email.get("subject") or "").lower()
     if "urgent" in subject:
-        reasons.append("subject_contains_urgent")
+        reasons.append("urgent")
 
     required = [
         po.get("po_number"),
@@ -33,9 +35,26 @@ def needs_attention(payload: dict[str, Any], amount_threshold: float = 15000.0, 
         totals.get("total"),
     ]
     if any(value in (None, "") for value in required):
-        reasons.append("required_fields_missing")
+        reasons.append("missing_fields")
 
     return reasons
+
+
+def failure_flags(reasons: list[str]) -> list[str]:
+    fail_set = {"missing_fields", "exceeds_threshold"}
+    return [reason for reason in reasons if reason in fail_set]
+
+
+def priority_rank(reasons: list[str]) -> int:
+    # Lower is higher queue priority (separate from failure policy).
+    rank_map = {
+        "urgent": 0,
+        "due_soon": 1,
+    }
+    if not reasons:
+        return 2
+    # Only urgent/due_soon influence priority. Everything else is fallback tier.
+    return min(rank_map.get(reason, 2) for reason in reasons)
 
 
 def write_alert(po: PurchaseOrder, status: str, reasons: list[str], error_message: str | None = None) -> None:
@@ -51,3 +70,39 @@ def write_alert(po: PurchaseOrder, status: str, reasons: list[str], error_messag
         payload["error"] = error_message
     po.alert_path.parent.mkdir(parents=True, exist_ok=True)
     po.alert_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
+def write_suite_response_summary(
+    suite_dir: Path,
+    suite_name: str,
+    ordered_events: list[dict[str, Any]],
+) -> None:
+    response_dir = suite_dir / "response"
+    response_dir.mkdir(parents=True, exist_ok=True)
+
+    # Remove legacy per-task response files.
+    for old in response_dir.glob("*.response.txt"):
+        old.unlink(missing_ok=True)
+
+    suite_status = "SUCCESS"
+    if any(event["status"] in {"FAILED", "PENDING"} for event in ordered_events):
+        suite_status = "FAILED"
+
+    lines = [
+        f"Suite: {suite_name}",
+        f"Status: {suite_status}",
+        "Execution:",
+    ]
+
+    for idx, event in enumerate(ordered_events, start=1):
+        reason_text = ", ".join(event.get("reasons", [])) or "none"
+        po_number = event.get("po_number") or "N/A"
+        line = f"{idx}. {event['task']} | {event['status']} | flags={reason_text} | po={po_number}"
+        if event.get("error"):
+            short_error = re.sub(r"\s+", " ", str(event["error"])).strip()
+            if len(short_error) > 120:
+                short_error = short_error[:117] + "..."
+            line += f" | error={short_error}"
+        lines.append(line)
+
+    (response_dir / "summary.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")

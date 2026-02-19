@@ -1,0 +1,8 @@
+Suite: attention_suite
+Status: FAILED
+Execution:
+1. urgent_only | SUCCESS | flags=urgent | po=PO-SUITE-0002
+2. due_soon_only | SUCCESS | flags=due_soon | po=PO-SUITE-0004
+3. amount_only | FAILED | flags=exceeds_threshold | po=PO-SUITE-0003 | error=exceeds_threshold
+4. missing_fields | FAILED | flags=missing_fields | po=PO-SUITE-0005 | error=missing_fields
+5. no_flags | SUCCESS | flags=none | po=PO-SUITE-0001

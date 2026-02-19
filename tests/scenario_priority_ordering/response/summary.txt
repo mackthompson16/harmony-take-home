@@ -1,0 +1,9 @@
+Suite: scenario_priority_ordering
+Status: FAILED
+Execution:
+1. urgent_alpha | SUCCESS | flags=urgent | po=PO-PRIO-0001
+2. due_soon_beta | SUCCESS | flags=due_soon | po=PO-PRIO-0002
+3. normal_early_date | SUCCESS | flags=none | po=PO-PRIO-0003
+4. exceeds_threshold_zeta | FAILED | flags=exceeds_threshold | po=PO-PRIO-0004 | error=exceeds_threshold
+5. missing_fields_omega | FAILED | flags=missing_fields | po=PO-PRIO-0005 | error=missing_fields
+6. normal_late_date | SUCCESS | flags=none | po=PO-PRIO-0006

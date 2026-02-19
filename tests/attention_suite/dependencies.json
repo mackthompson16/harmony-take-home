@@ -1,6 +1,0 @@
-{
-  "urgent_only": ["no_flags"],
-  "amount_only": ["urgent_only"],
-  "due_soon_only": ["amount_only"],
-  "missing_fields": ["due_soon_only"]
-}

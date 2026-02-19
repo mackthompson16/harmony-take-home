@@ -1,8 +1,8 @@
 {
   "po_number": "PO-SUITE-0005",
-  "status": "SUCCESS",
+  "status": "FAILED",
   "reasons": [
-    "required_fields_missing"
+    "missing_fields"
   ],
   "fields": {
     "email": {
@@ -70,5 +70,6 @@
       }
     }
   },
-  "timestamp": "2026-02-19T21:57:59.243937+00:00"
+  "timestamp": "2026-02-19T22:36:06.554446+00:00",
+  "error": "missing_fields"
 }
