@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,7 @@ VALID_STATES = {"PENDING", "RUNNING", "SUCCESS", "FAILED"}
 class PurchaseOrder:
     name: str
     txt_path: Path
+    order_date_hint: date | None = None
     req: dict[str, Any] | None = None
     state: str = "PENDING"
     dependencies: list[str] = field(default_factory=list)

@@ -1,7 +1,27 @@
 import json
+import re
+from datetime import date
 from pathlib import Path
 
+from parse_txt import load_input_text
 from workflow.models import PurchaseOrder
+
+ORDER_DATE_PATTERN = re.compile(r"^Order Date:\s*(\d{4}-\d{2}-\d{2})\s*$", re.IGNORECASE | re.MULTILINE)
+
+
+def extract_order_date_hint(path: Path) -> date | None:
+    try:
+        raw = load_input_text(path)
+    except Exception:
+        return None
+
+    match = ORDER_DATE_PATTERN.search(raw)
+    if not match:
+        return None
+    try:
+        return date.fromisoformat(match.group(1))
+    except ValueError:
+        return None
 
 
 def load_dependencies(tests_root: Path, task_names: list[str], suite_name: str | None = None) -> dict[str, list[str]]:
@@ -50,17 +70,25 @@ def topo_sort(tasks: dict[str, PurchaseOrder]) -> list[str]:
             indegree[name] += 1
             children[dep].append(name)
 
-    ready = sorted([name for name, count in indegree.items() if count == 0])
+    def task_sort_key(task_name: str) -> tuple[bool, date, str]:
+        task = tasks[task_name]
+        return (
+            task.order_date_hint is None,
+            task.order_date_hint or date.max,
+            task_name,
+        )
+
+    ready = sorted([name for name, count in indegree.items() if count == 0], key=task_sort_key)
     ordered: list[str] = []
 
     while ready:
         node = ready.pop(0)
         ordered.append(node)
-        for child in sorted(children[node]):
+        for child in sorted(children[node], key=task_sort_key):
             indegree[child] -= 1
             if indegree[child] == 0:
                 ready.append(child)
-                ready.sort()
+                ready.sort(key=task_sort_key)
 
     if len(ordered) != len(tasks):
         raise ValueError("Cycle detected in purchase order DAG.")
@@ -82,5 +110,9 @@ def discover_purchase_orders(tests_root: Path, suite_name: str | None = None) ->
     for txt_path in txt_paths:
         current_suite_name = txt_path.parent.parent.name if txt_path.parent.name == "input" else txt_path.parent.name
         task_name = f"{current_suite_name}/{txt_path.stem}"
-        tasks[task_name] = PurchaseOrder(name=task_name, txt_path=txt_path)
+        tasks[task_name] = PurchaseOrder(
+            name=task_name,
+            txt_path=txt_path,
+            order_date_hint=extract_order_date_hint(txt_path),
+        )
     return tasks

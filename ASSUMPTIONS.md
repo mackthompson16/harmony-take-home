@@ -1,40 +1,34 @@
 # Assumptions
 
-## Scope Boundaries
+## Scope
 
-- This implementation is a local, single-process workflow runner (no distributed workers).
-- It targets the core demo path: read PO input -> parse fields -> upsert DB -> evaluate attention -> emit alerts.
-- Console visibility and persisted task/workflow state are included; advanced scheduling/orchestration features are out of scope.
+- Single-process, local runner (no distributed workers).
+- Goal: input -> parse -> upsert -> attention check -> alert output.
+- Includes console visibility + persisted run/task states.
 
-## Input/Parsing Assumptions
+## Parsing
 
-- PO inputs are expected to follow a consistent structure/nomenclature (as in the provided sample).
-- Parsing is deterministic and regex/string-rule based (no NLP, no fuzzy matching).
-- Because of this, the parser is intentionally brittle: major format drift or missing labels can lead to partial extraction or failure.
-- Inputs can be `.txt` or `.pdf`; PDFs are expected to contain extractable text in the same logical format as `.txt`.
+- Assumes consistent PO format/nomenclature (sample-like).
+- Deterministic regex parser (no NLP).
+- Intentionally brittle to format drift.
+- Supports `.txt` and text-extractable `.pdf`.
 
-## Dependency Ordering Assumptions
+## DAG / Ordering
 
-- The assignment language around dependency definition was ambiguous, so dependencies are provided explicitly via `tests/<suite>/dependencies.json` when needed.
-- If no dependency file is provided, tasks are executed in deterministic alphabetical order by file name.
-- We currently do **not** infer task dependencies from parsed PO JSON content.
-  - That could be added later, but would require clear business rules (e.g., PO references, dates, vendor-level sequencing).
-- A future improvement could support time-based ordering (e.g., by file modified time or PO order date) when dependencies are absent.
+- Explicit dependencies: `tests/<suite>/dependencies.json` (optional).
+- No dependency inference from parsed JSON.
+- If dependencies are missing: sort by PO `Order Date` (from document), then alphabetical.
 
-## Database Assumptions
+## Database
 
-- Schema design was inferred from the `desc.txt` requirements and sample flow:
-  - purchase order storage/upsert
-  - line items
-  - alerts
-  - workflow/task run state persistence + transition history
-- Postgres is the source of truth for run/task states.
-- State model is strict: `PENDING -> RUNNING -> SUCCESS | FAILED`.
+- Schema inferred from `desc.txt` sample requirements.
+- Includes PO upsert, line items, alerts, workflow/task states, transition history.
+- Postgres is source of truth for state.
+- State model: `PENDING -> RUNNING -> SUCCESS|FAILED`.
 
-## Runtime/Package Assumptions
+## Runtime
 
 - Python 3.11+ runtime.
-- Postgres runs via Docker Compose.
-- Python DB driver: `psycopg` (or `psycopg2` fallback).
-- PDF parsing requires `pypdf`.
-- Environment is expected to provide Docker and local file-system access to `tests/`.
+- Docker Compose for Postgres.
+- DB driver: `psycopg` (or `psycopg2` fallback).
+- PDF parser: `pypdf`.
