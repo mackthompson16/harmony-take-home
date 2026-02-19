@@ -1,0 +1,35 @@
+Subject: Purchase Order #PO-SUITE-0005
+From: qa.team@example.com
+To: orders@yourmfg.com
+Date: Wed, 19 Feb 2026 09:40:00 -0500
+
+Hello,
+
+Please process this purchase order.
+
+PURCHASE ORDER
+PO Number: PO-SUITE-0005
+Ship To: Demo Warehouse
+100 Main St
+Austin, TX 78701
+
+Order Date: 2026-02-19
+Due Date: 2099-12-31
+Payment Terms: Net 30
+
+LINE ITEMS
+Item Description Qty Unit Price Total
+1 Economy Labels 100 $1.00 $100.00
+2 Economy Sleeves 100 $1.50 $150.00
+
+Subtotal: $250.00
+Tax (0.00%): $0.00
+Shipping: $10.00
+TOTAL: $260.00
+
+Notes:
+Vendor field is intentionally omitted.
+
+Thank you,
+QA Team
+Procurement Analyst

@@ -1,4 +1,5 @@
 import json
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
@@ -20,18 +21,76 @@ except ImportError:
         DB_DRIVER = None
 
 
-class EmailConnector:
-    @staticmethod
-    def read_text(path: Path) -> str:
+class EmailConnectorBase(ABC):
+    @abstractmethod
+    def read_text(self, path: Path | None = None) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def extract_purchase_order(self, path: Path | None = None) -> dict[str, Any]:
+        raise NotImplementedError
+
+
+class DatabaseConnectorBase(ABC):
+    @abstractmethod
+    def create_workflow_run(self) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def transition_workflow(self, run_id: int, new_state: str, error_message: str | None = None) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def create_purchase_order_run(self, workflow_run_id: int, po: PurchaseOrder) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_attempts(self, purchase_order_run_id: int, attempts: int) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def transition_purchase_order(
+        self, purchase_order_run_id: int, new_state: str, error_message: str | None = None
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def set_output(self, purchase_order_run_id: int, output_payload: dict[str, Any]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def upsert_purchase_order(self, payload: dict[str, Any]) -> int:
+        raise NotImplementedError
+
+    @abstractmethod
+    def insert_alert(self, purchase_order_id: int, po_number: str, reasons: list[str], fields: dict[str, Any]) -> None:
+        raise NotImplementedError
+
+
+class TxtEmailConnector(EmailConnectorBase):
+    def __init__(self, default_path: Path | None = None) -> None:
+        self.default_path = default_path
+
+    def _resolve_path(self, path: Path | None) -> Path:
+        if path is not None:
+            return path
+        if self.default_path is not None:
+            return self.default_path
+        return Path.cwd() / "tests" / "test1" / "test1.txt"
+
+    def read_text(self, path: Path | None = None) -> str:
+        resolved = self._resolve_path(path)
+        if not resolved.exists():
+            raise FileNotFoundError(f"Email input file not found: {resolved}")
+        path = resolved
         return path.read_text(encoding="utf-8", errors="replace")
 
-    @staticmethod
-    def extract_purchase_order(path: Path) -> dict[str, Any]:
-        raw = EmailConnector.read_text(path)
+    def extract_purchase_order(self, path: Path | None = None) -> dict[str, Any]:
+        raw = self.read_text(path)
         return parse_purchase_order_text(raw)
 
 
-class DatabaseConnector:
+class PostgresDatabaseConnector(DatabaseConnectorBase):
     def __init__(self, dsn: str) -> None:
         if DB_DRIVER is None:
             raise RuntimeError("Install psycopg or psycopg2 to run workflow.")
@@ -109,3 +168,8 @@ class DatabaseConnector:
             with conn.cursor() as cur:
                 cur.execute(sql, (purchase_order_id, po_number, reasons, json.dumps(fields)))
             conn.commit()
+
+
+# Backward-compatible names used by the workflow runner.
+EmailConnector = TxtEmailConnector
+DatabaseConnector = PostgresDatabaseConnector

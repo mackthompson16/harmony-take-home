@@ -19,12 +19,14 @@ class PurchaseOrder:
 
     @property
     def test_dir(self) -> Path:
+        if self.txt_path.parent.name == "input":
+            return self.txt_path.parent.parent
         return self.txt_path.parent
 
     @property
     def json_path(self) -> Path:
-        return self.test_dir / f"{self.txt_path.stem}.json"
+        return self.test_dir / "parsed" / f"{self.txt_path.stem}.json"
 
     @property
     def alert_path(self) -> Path:
-        return self.test_dir / "alerts.json"
+        return self.test_dir / "alerts" / f"{self.txt_path.stem}.alerts.json"

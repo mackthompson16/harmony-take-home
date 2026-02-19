@@ -1,0 +1,74 @@
+{
+  "po_number": "PO-SUITE-0002",
+  "status": "SUCCESS",
+  "reasons": [
+    "subject_contains_urgent"
+  ],
+  "fields": {
+    "email": {
+      "subject": "URGENT: Purchase Order #PO-SUITE-0002",
+      "from": "qa.team@example.com",
+      "to": "orders@yourmfg.com",
+      "date": "Wed, 19 Feb 2026 09:10:00 -0500"
+    },
+    "message_intro": [
+      "Hello,",
+      "Please process this purchase order."
+    ],
+    "purchase_order": {
+      "po_number": "PO-SUITE-0002",
+      "vendor": "Alert Supply Co.",
+      "ship_to": {
+        "name": "Demo Warehouse",
+        "address_lines": [
+          "100 Main St",
+          "Austin, TX 78701"
+        ],
+        "full": "Demo Warehouse, 100 Main St, Austin, TX 78701"
+      },
+      "order_date": "2026-02-19",
+      "due_date": "2099-12-31",
+      "payment_terms": "Net 30",
+      "line_items": [
+        {
+          "item_no": 1,
+          "description": "Priority Labels",
+          "qty": 100,
+          "unit_price": 4.0,
+          "total": 400.0
+        },
+        {
+          "item_no": 2,
+          "description": "Priority Sleeves",
+          "qty": 100,
+          "unit_price": 5.0,
+          "total": 500.0
+        }
+      ],
+      "totals": {
+        "subtotal": 900.0,
+        "tax": {
+          "rate": "0.00%",
+          "amount": 0.0
+        },
+        "shipping": 20.0,
+        "total": 920.0
+      },
+      "notes": [
+        "Only urgent subject should trigger."
+      ],
+      "contact": {
+        "name": "QA Team",
+        "title": "Procurement Analyst",
+        "company": null,
+        "phone": null,
+        "email": null,
+        "raw_lines": [
+          "QA Team",
+          "Procurement Analyst"
+        ]
+      }
+    }
+  },
+  "timestamp": "2026-02-19T04:12:50.408752+00:00"
+}

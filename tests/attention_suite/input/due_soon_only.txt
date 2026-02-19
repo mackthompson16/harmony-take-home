@@ -1,0 +1,36 @@
+Subject: Purchase Order #PO-SUITE-0004
+From: qa.team@example.com
+To: orders@yourmfg.com
+Date: Wed, 19 Feb 2026 09:30:00 -0500
+
+Hello,
+
+Please process this purchase order.
+
+PURCHASE ORDER
+PO Number: PO-SUITE-0004
+Vendor: Fast Turn Supply Co.
+Ship To: Demo Warehouse
+100 Main St
+Austin, TX 78701
+
+Order Date: 2026-02-19
+Due Date: 2025-01-01
+Payment Terms: Net 30
+
+LINE ITEMS
+Item Description Qty Unit Price Total
+1 Standard Bands 50 $2.00 $100.00
+2 Standard Sleeves 50 $3.00 $150.00
+
+Subtotal: $250.00
+Tax (0.00%): $0.00
+Shipping: $10.00
+TOTAL: $260.00
+
+Notes:
+Only due date window should trigger.
+
+Thank you,
+QA Team
+Procurement Analyst

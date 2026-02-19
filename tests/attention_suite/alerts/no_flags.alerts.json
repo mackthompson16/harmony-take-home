@@ -1,0 +1,72 @@
+{
+  "po_number": "PO-SUITE-0001",
+  "status": "SUCCESS",
+  "reasons": [],
+  "fields": {
+    "email": {
+      "subject": "Purchase Order #PO-SUITE-0001 - Baseline",
+      "from": "qa.team@example.com",
+      "to": "orders@yourmfg.com",
+      "date": "Wed, 19 Feb 2026 09:00:00 -0500"
+    },
+    "message_intro": [
+      "Hello,",
+      "Please process this purchase order."
+    ],
+    "purchase_order": {
+      "po_number": "PO-SUITE-0001",
+      "vendor": "Baseline Supply Co.",
+      "ship_to": {
+        "name": "Demo Warehouse",
+        "address_lines": [
+          "100 Main St",
+          "Austin, TX 78701"
+        ],
+        "full": "Demo Warehouse, 100 Main St, Austin, TX 78701"
+      },
+      "order_date": "2026-02-19",
+      "due_date": "2099-12-31",
+      "payment_terms": "Net 30",
+      "line_items": [
+        {
+          "item_no": 1,
+          "description": "Standard Labels",
+          "qty": 100,
+          "unit_price": 2.0,
+          "total": 200.0
+        },
+        {
+          "item_no": 2,
+          "description": "Carton Stickers",
+          "qty": 100,
+          "unit_price": 3.0,
+          "total": 300.0
+        }
+      ],
+      "totals": {
+        "subtotal": 500.0,
+        "tax": {
+          "rate": "0.00%",
+          "amount": 0.0
+        },
+        "shipping": 10.0,
+        "total": 510.0
+      },
+      "notes": [
+        "No special handling required."
+      ],
+      "contact": {
+        "name": "QA Team",
+        "title": "Procurement Analyst",
+        "company": null,
+        "phone": null,
+        "email": null,
+        "raw_lines": [
+          "QA Team",
+          "Procurement Analyst"
+        ]
+      }
+    }
+  },
+  "timestamp": "2026-02-19T04:12:50.157386+00:00"
+}

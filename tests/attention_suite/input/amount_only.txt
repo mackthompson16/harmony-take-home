@@ -1,0 +1,36 @@
+Subject: Purchase Order #PO-SUITE-0003
+From: qa.team@example.com
+To: orders@yourmfg.com
+Date: Wed, 19 Feb 2026 09:20:00 -0500
+
+Hello,
+
+Please process this purchase order.
+
+PURCHASE ORDER
+PO Number: PO-SUITE-0003
+Vendor: High Value Supply Co.
+Ship To: Demo Warehouse
+100 Main St
+Austin, TX 78701
+
+Order Date: 2026-02-19
+Due Date: 2099-12-31
+Payment Terms: Net 30
+
+LINE ITEMS
+Item Description Qty Unit Price Total
+1 Premium Labels 10000 $2.00 $20,000.00
+2 Premium Sleeves 2000 $3.00 $6,000.00
+
+Subtotal: $26,000.00
+Tax (0.00%): $0.00
+Shipping: $100.00
+TOTAL: $26,100.00
+
+Notes:
+Only amount threshold should trigger.
+
+Thank you,
+QA Team
+Procurement Analyst

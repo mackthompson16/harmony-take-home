@@ -1,0 +1,74 @@
+{
+  "po_number": "PO-SUITE-0003",
+  "status": "SUCCESS",
+  "reasons": [
+    "amount_exceeds_threshold"
+  ],
+  "fields": {
+    "email": {
+      "subject": "Purchase Order #PO-SUITE-0003",
+      "from": "qa.team@example.com",
+      "to": "orders@yourmfg.com",
+      "date": "Wed, 19 Feb 2026 09:20:00 -0500"
+    },
+    "message_intro": [
+      "Hello,",
+      "Please process this purchase order."
+    ],
+    "purchase_order": {
+      "po_number": "PO-SUITE-0003",
+      "vendor": "High Value Supply Co.",
+      "ship_to": {
+        "name": "Demo Warehouse",
+        "address_lines": [
+          "100 Main St",
+          "Austin, TX 78701"
+        ],
+        "full": "Demo Warehouse, 100 Main St, Austin, TX 78701"
+      },
+      "order_date": "2026-02-19",
+      "due_date": "2099-12-31",
+      "payment_terms": "Net 30",
+      "line_items": [
+        {
+          "item_no": 1,
+          "description": "Premium Labels",
+          "qty": 10000,
+          "unit_price": 2.0,
+          "total": 20000.0
+        },
+        {
+          "item_no": 2,
+          "description": "Premium Sleeves",
+          "qty": 2000,
+          "unit_price": 3.0,
+          "total": 6000.0
+        }
+      ],
+      "totals": {
+        "subtotal": 26000.0,
+        "tax": {
+          "rate": "0.00%",
+          "amount": 0.0
+        },
+        "shipping": 100.0,
+        "total": 26100.0
+      },
+      "notes": [
+        "Only amount threshold should trigger."
+      ],
+      "contact": {
+        "name": "QA Team",
+        "title": "Procurement Analyst",
+        "company": null,
+        "phone": null,
+        "email": null,
+        "raw_lines": [
+          "QA Team",
+          "Procurement Analyst"
+        ]
+      }
+    }
+  },
+  "timestamp": "2026-02-19T04:12:50.722301+00:00"
+}

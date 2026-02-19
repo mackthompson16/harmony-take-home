@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 from pathlib import Path
@@ -7,19 +8,26 @@ from workflow.connectors import DatabaseConnector, EmailConnector
 from workflow.dag import discover_purchase_orders, load_dependencies, topo_sort
 
 
-def run_workflow(max_retries: int = 2) -> int:
+def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
     tests_root = Path(__file__).resolve().parent.parent / "tests"
-    tasks = discover_purchase_orders(tests_root)
+    if suite:
+        suite_dir = tests_root / suite
+        if not suite_dir.exists() or not suite_dir.is_dir():
+            raise RuntimeError(f"Suite '{suite}' not found at {suite_dir}")
+    tasks = discover_purchase_orders(tests_root, suite_name=suite)
     if not tasks:
-        raise RuntimeError("No test purchase-order files found in tests/test*/test*.txt")
+        if suite:
+            raise RuntimeError(f"No test purchase-order files found in tests/{suite}/*.txt")
+        raise RuntimeError("No test purchase-order files found in tests/<suite_name>/*.txt")
 
-    dependencies = load_dependencies(tests_root, list(tasks.keys()))
+    dependencies = load_dependencies(tests_root, list(tasks.keys()), suite_name=suite)
     for name, deps in dependencies.items():
         if name in tasks:
             tasks[name].dependencies = deps
 
     order = topo_sort(tasks)
     dsn = os.getenv("POSTGRES_DSN", "postgresql://harmony:harmony@localhost:5433/harmony")
+    email = EmailConnector()
     db = DatabaseConnector(dsn)
 
     workflow_run_id = db.create_workflow_run()
@@ -39,7 +47,8 @@ def run_workflow(max_retries: int = 2) -> int:
             return 1
 
         try:
-            po.req = EmailConnector.extract_purchase_order(po.txt_path)
+            po.req = email.extract_purchase_order(po.txt_path)
+            po.json_path.parent.mkdir(parents=True, exist_ok=True)
             po.json_path.write_text(json.dumps(po.req, indent=2), encoding="utf-8")
 
             po_run_id = db.create_purchase_order_run(workflow_run_id, po)
@@ -95,4 +104,22 @@ def run_workflow(max_retries: int = 2) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(run_workflow())
+    parser = argparse.ArgumentParser(description="Run purchase-order workflow.")
+    parser.add_argument(
+        "suite",
+        nargs="?",
+        default=None,
+        help="Optional suite folder under tests/ (example: attention_suite).",
+    )
+    parser.add_argument(
+        "--retries",
+        type=int,
+        default=2,
+        help="Number of retries after first attempt for each task.",
+    )
+    args = parser.parse_args()
+    try:
+        raise SystemExit(run_workflow(suite=args.suite, max_retries=args.retries))
+    except Exception as exc:  # noqa: BLE001
+        print(f"ERROR: {exc}")
+        raise SystemExit(1)

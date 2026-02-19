@@ -1,0 +1,36 @@
+Subject: Purchase Order #PO-SHARED-1001 - Shared Good PO
+From: qa.team@example.com
+To: orders@yourmfg.com
+Date: Thu, 19 Feb 2026 10:00:00 -0500
+
+Hello,
+
+Please process this purchase order.
+
+PURCHASE ORDER
+PO Number: PO-SHARED-1001
+Vendor: Shared Vendor Inc.
+Ship To: Shared Warehouse
+10 Demo Way
+Nashville, TN 37201
+
+Order Date: 2026-02-19
+Due Date: 2099-12-31
+Payment Terms: Net 30
+
+LINE ITEMS
+Item Description Qty Unit Price Total
+1 Shared Labels 100 $4.00 $400.00
+2 Shared Sleeves 50 $2.00 $100.00
+
+Subtotal: $500.00
+Tax (0.00%): $0.00
+Shipping: $10.00
+TOTAL: $510.00
+
+Notes:
+This is the same PO content reused across suites.
+
+Thank you,
+QA Team
+Procurement Analyst

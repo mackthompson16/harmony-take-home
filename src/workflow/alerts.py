@@ -49,4 +49,5 @@ def write_alert(po: PurchaseOrder, status: str, reasons: list[str], error_messag
     }
     if error_message:
         payload["error"] = error_message
+    po.alert_path.parent.mkdir(parents=True, exist_ok=True)
     po.alert_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

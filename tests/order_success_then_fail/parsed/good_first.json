@@ -1,0 +1,66 @@
+{
+  "email": {
+    "subject": "Purchase Order #PO-SHARED-1001 - Shared Good PO",
+    "from": "qa.team@example.com",
+    "to": "orders@yourmfg.com",
+    "date": "Thu, 19 Feb 2026 10:00:00 -0500"
+  },
+  "message_intro": [
+    "Hello,",
+    "Please process this purchase order."
+  ],
+  "purchase_order": {
+    "po_number": "PO-SHARED-1001",
+    "vendor": "Shared Vendor Inc.",
+    "ship_to": {
+      "name": "Shared Warehouse",
+      "address_lines": [
+        "10 Demo Way",
+        "Nashville, TN 37201"
+      ],
+      "full": "Shared Warehouse, 10 Demo Way, Nashville, TN 37201"
+    },
+    "order_date": "2026-02-19",
+    "due_date": "2099-12-31",
+    "payment_terms": "Net 30",
+    "line_items": [
+      {
+        "item_no": 1,
+        "description": "Shared Labels",
+        "qty": 100,
+        "unit_price": 4.0,
+        "total": 400.0
+      },
+      {
+        "item_no": 2,
+        "description": "Shared Sleeves",
+        "qty": 50,
+        "unit_price": 2.0,
+        "total": 100.0
+      }
+    ],
+    "totals": {
+      "subtotal": 500.0,
+      "tax": {
+        "rate": "0.00%",
+        "amount": 0.0
+      },
+      "shipping": 10.0,
+      "total": 510.0
+    },
+    "notes": [
+      "This is the same PO content reused across suites."
+    ],
+    "contact": {
+      "name": "QA Team",
+      "title": "Procurement Analyst",
+      "company": null,
+      "phone": null,
+      "email": null,
+      "raw_lines": [
+        "QA Team",
+        "Procurement Analyst"
+      ]
+    }
+  }
+}
