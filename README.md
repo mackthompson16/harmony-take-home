@@ -1,5 +1,5 @@
 # Harmony Take-Home (PO Workflow)
-
+## [View the Workflow Diagram](https://lucid.app/lucidchart/7a32a848-fb27-4a4f-b108-750f03f2a093/edit?view_items=6zXxp7UZMAQd&page=0_0&invitationId=inv_7e049bbd-d488-401d-a996-f9e93608f79d)
 Minimal workflow engine for purchase-order ingestion:
 - Parse PO email text into structured JSON
 - Upsert PO + line items into Postgres
