@@ -3,7 +3,7 @@
   "status": "FAILED",
   "reasons": [
     "out_of_stock",
-    "stock_detail:label_roll(need_delta=10000,available=4100)"
+    "stock_detail:label_roll(need_delta=10000,available=3600)"
   ],
   "fields": {
     "email": {
@@ -71,6 +71,6 @@
       }
     }
   },
-  "timestamp": "2026-02-20T03:17:28.521055+00:00",
+  "timestamp": "2026-02-20T03:41:18.927894+00:00",
   "error": "out_of_stock"
 }

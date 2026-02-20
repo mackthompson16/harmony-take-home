@@ -75,7 +75,7 @@ python src\run_workflow.py attention_suite
 3. Inspect workflow/task state:
 ```powershell
 cd db
-docker compose run --rm dbcli /work/db/queries/04_workflow_visibility.sql
+docker compose run --rm dbcli -f /work/db/queries/04_workflow_visibility.sql
 ```
 
 This shows:
@@ -89,7 +89,7 @@ State is persisted in Postgres, so run history survives process restarts. Each d
 
 Inspect stock levels/consumption:
 ```powershell
-docker compose run --rm dbcli /work/db/queries/05_stock_visibility.sql
+docker compose run --rm dbcli -f /work/db/queries/05_stock_visibility.sql
 ```
 
 Console output includes:

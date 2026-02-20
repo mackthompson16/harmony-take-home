@@ -5,6 +5,6 @@
     "waiting_on_upstream"
   ],
   "fields": {},
-  "timestamp": "2026-02-20T03:17:27.402732+00:00",
+  "timestamp": "2026-02-20T03:41:17.459891+00:00",
   "error": "Dependencies not satisfied for scenario_dependency_waiting/middle_dep: scenario_dependency_waiting/upstream_fail"
 }

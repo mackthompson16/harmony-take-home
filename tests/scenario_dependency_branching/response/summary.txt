@@ -2,7 +2,7 @@ Suite: scenario_dependency_branching
 Status: FAILED
 Execution:
 1. root_urgent | SUCCESS | flags=urgent | po=PO-BRANCH-0001
-2. parent_exceeds | FAILED | flags=out_of_stock, stock_detail:label_roll(need_delta=10000,available=4400) | po=PO-BRANCH-0002 | error=out_of_stock
+2. parent_exceeds | FAILED | flags=out_of_stock, stock_detail:label_roll(need_delta=10000,available=3600) | po=PO-BRANCH-0002 | error=out_of_stock
 3. child_blocked | PENDING | flags=waiting_on_upstream | po=N/A | error=Dependencies not satisfied for scenario_dependency_branching/child_blocked: scenario_dependency_branching/parent_exceeds
 4. parallel_after_root | SUCCESS | flags=none | po=PO-BRANCH-0004
 5. tail_after_parallel | SUCCESS | flags=none | po=PO-BRANCH-0005
