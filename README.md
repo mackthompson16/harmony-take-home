@@ -72,6 +72,11 @@ Run a single suite folder:
 python src\run_workflow.py attention_suite
 ```
 
+Set retries (`N`) for full task execution (`parse -> validate -> upsert`):
+```powershell
+python src\run_workflow.py attention_suite --retries 2
+```
+
 3. Inspect workflow/task state:
 ```powershell
 cd db

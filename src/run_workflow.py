@@ -98,40 +98,34 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
             po.state = "RUNNING"
             print(f"{task_name}: PENDING -> RUNNING")
             db.transition_purchase_order(po_run_id, "RUNNING")
-            po.req = email.extract_purchase_order(po.txt_path)
-            po.json_path.parent.mkdir(parents=True, exist_ok=True)
-            po.json_path.write_text(json.dumps(po.req, indent=2), encoding="utf-8")
-            parsed_po_number = (po.req.get("purchase_order") or {}).get("po_number")
-            db.set_purchase_order_request(po_run_id, po.req, parsed_po_number)
-
-            precheck_reasons = needs_attention(po.req)
-            precheck_failures = failure_flags(precheck_reasons)
-            po_number_for_stock = (po.req.get("purchase_order") or {}).get("po_number") or ""
-            line_items_for_stock = (po.req.get("purchase_order") or {}).get("line_items") or []
-            stock_ok, stock_details = db.reserve_stock(po_number_for_stock, line_items_for_stock)
-            if not stock_ok:
-                precheck_reasons = precheck_reasons + ["out_of_stock"]
-                if stock_details:
-                    precheck_reasons.append(f"stock_detail:{';'.join(stock_details)}")
-            precheck_failures = failure_flags(precheck_reasons)
-            if precheck_failures:
-                error_message = ",".join(precheck_failures)
-                db.transition_purchase_order(po_run_id, "FAILED", error_message)
-                po.state = "FAILED"
-                completed[task_name] = "FAILED"
-                workflow_failed = True
-                write_alert(po, "FAILED", precheck_reasons, error_message)
-                po_number = (po.req.get("purchase_order") or {}).get("po_number")
-                record_event(task_name, "FAILED", precheck_reasons, po_number, error_message)
-                print(f"{task_name}: RUNNING -> FAILED ({error_message})")
-                print(f"TASK END: {task_name} -> FAILED")
-                continue
+            success = False
+            last_error_message: str | None = None
+            last_reasons: list[str] = ["task_execution_failed"]
 
             for attempt in range(1, max_retries + 2):
                 db.set_attempts(po_run_id, attempt)
                 try:
+                    po.req = email.extract_purchase_order(po.txt_path)
+                    po.json_path.parent.mkdir(parents=True, exist_ok=True)
+                    po.json_path.write_text(json.dumps(po.req, indent=2), encoding="utf-8")
+                    parsed_po_number = (po.req.get("purchase_order") or {}).get("po_number")
+                    db.set_purchase_order_request(po_run_id, po.req, parsed_po_number)
+
+                    reasons = needs_attention(po.req)
+                    po_number_for_stock = (po.req.get("purchase_order") or {}).get("po_number") or ""
+                    line_items_for_stock = (po.req.get("purchase_order") or {}).get("line_items") or []
+                    stock_ok, stock_details = db.reserve_stock(po_number_for_stock, line_items_for_stock)
+                    if not stock_ok:
+                        reasons = reasons + ["out_of_stock"]
+                        if stock_details:
+                            reasons.append(f"stock_detail:{';'.join(stock_details)}")
+
+                    fail_reasons = failure_flags(reasons)
+                    if fail_reasons:
+                        last_reasons = reasons
+                        raise RuntimeError(",".join(fail_reasons))
+
                     po_id = db.upsert_purchase_order(po.req)
-                    reasons = precheck_reasons
                     po_number = (po.req.get("purchase_order") or {}).get("po_number") or task_name
 
                     if reasons:
@@ -149,23 +143,34 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
                     record_event(task_name, "SUCCESS", reasons, po_number)
                     print(f"{task_name}: RUNNING -> SUCCESS")
                     print(f"TASK END: {task_name} -> SUCCESS")
+                    success = True
                     break
                 except Exception as exc:  # noqa: BLE001
                     error_message = str(exc)
+                    last_error_message = error_message
+                    if error_message and last_reasons == ["task_execution_failed"]:
+                        tokens = [token.strip() for token in error_message.split(",") if token.strip()]
+                        if tokens:
+                            if all(token in {"missing_fields", "out_of_stock"} for token in tokens):
+                                last_reasons = tokens
+                            elif "missing_fields" in tokens or "out_of_stock" in tokens:
+                                last_reasons = [token for token in tokens if token in {"missing_fields", "out_of_stock"}]
                     if attempt <= max_retries:
                         print(f"{task_name}: retry {attempt}/{max_retries} after error: {error_message}")
                         continue
 
-                    db.transition_purchase_order(po_run_id, "FAILED", error_message)
-                    po.state = "FAILED"
-                    completed[task_name] = "FAILED"
-                    workflow_failed = True
-                    write_alert(po, "FAILED", ["task_execution_failed"], error_message)
-                    po_number = (po.req.get("purchase_order") or {}).get("po_number")
-                    record_event(task_name, "FAILED", ["task_execution_failed"], po_number, error_message)
-                    print(f"{task_name}: RUNNING -> FAILED ({error_message})")
-                    print(f"TASK END: {task_name} -> FAILED")
-                    break
+            if not success:
+                final_error = last_error_message or "task_execution_failed"
+                db.transition_purchase_order(po_run_id, "FAILED", final_error)
+                po.state = "FAILED"
+                completed[task_name] = "FAILED"
+                workflow_failed = True
+                write_alert(po, "FAILED", last_reasons, final_error)
+                po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
+                record_event(task_name, "FAILED", last_reasons, po_number, final_error)
+                print(f"{task_name}: RUNNING -> FAILED ({final_error})")
+                print(f"TASK END: {task_name} -> FAILED")
+                continue
         except Exception as exc:  # noqa: BLE001
             message = str(exc)
             po.state = "FAILED"
