@@ -3,6 +3,6 @@ Status: FAILED
 Execution:
 1. urgent_only | SUCCESS | flags=urgent | po=PO-SUITE-0002
 2. due_soon_only | SUCCESS | flags=due_soon | po=PO-SUITE-0004
-3. amount_only | FAILED | flags=out_of_stock, stock_detail:label_roll(need_delta=10000,available=3600) | po=PO-SUITE-0003 | error=out_of_stock
+3. amount_only | FAILED | flags=amount_exceeds_threshold, out_of_stock, stock_detail:label_roll(need_delta=10000,available=3600) | po=PO-SUITE-0003 | error=out_of_stock
 4. missing_fields | FAILED | flags=missing_fields | po=PO-SUITE-0005 | error=missing_fields
 5. no_flags | SUCCESS | flags=none | po=PO-SUITE-0001

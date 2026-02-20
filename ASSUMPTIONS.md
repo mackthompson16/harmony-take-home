@@ -17,16 +17,10 @@
 
 - Explicit dependencies: `tests/<suite>/dependencies.json` (optional).
 - No dependency inference from parsed JSON.
-- Execution order:
-  1. dependency DAG constraints
-  2. attention priority (deterministic flag metric)
-    - metric:
-    - `0`: `urgent`
-    - `1`: `due_soon`
-    - `2`: all others (`no_flags`, `out_of_stock`, `missing_fields`)
-    - failure policy is separate: fail on `out_of_stock` or `missing_fields`
-  3. PO `Order Date`
-  4. alphabetical fallback
+- Execution order: DAG constraints, then `urgent`, then `due_soon`, then PO `Order Date`, then alphabetical fallback.
+- Attention flags are deterministic: `urgent`, `due_soon`, `missing_fields`, `amount_exceeds_threshold`.
+- `amount_exceeds_threshold` uses `ATTENTION_TOTAL_THRESHOLD` (default `15000`).
+- Failure policy is separate: fail on `out_of_stock` or `missing_fields`.
 - If a task fails, independent downstream tasks still run.
 - Only tasks that depend on failed tasks stay `PENDING` (`waiting_on_upstream` / `waiting_on_dependency`).
 
@@ -41,6 +35,7 @@
 - All discovered tasks are created in `purchase_order_runs` immediately, so blocked tasks are persisted as `PENDING` too.
 - Visibility is query-based: running vs historical runs in `db/queries/04_workflow_visibility.sql`.
 - Manual stock policy: fixed product stock in DB; each PO reserves stock; insufficient stock => `out_of_stock`.
+- Stock reservation is skipped when parsed `po_number` is missing to avoid invalid shared reservations.
 
 ## Runtime
 
@@ -48,3 +43,4 @@
 - Docker Compose for Postgres.
 - DB driver: `psycopg` (or `psycopg2` fallback).
 - PDF parser: `pypdf`.
+- Optional demo visibility helper: `--simulate-latency`.

@@ -1,4 +1,5 @@
 # Harmony Take-Home (PO Workflow)
+## [Loom Demo](https://www.loom.com/share/7849906fb400416d920a55ce014b8bff)
 ## [View the Workflow Diagram](https://lucid.app/lucidchart/7a32a848-fb27-4a4f-b108-750f03f2a093/edit?viewport_loc=-2738%2C-1471%2C4955%2C2792%2C0_0&invitationId=inv_7e049bbd-d488-401d-a996-f9e93608f79d)
 Minimal workflow engine for purchase-order ingestion:
 - Parse PO email text into structured JSON
@@ -77,6 +78,11 @@ Set retries (`N`) for full task execution (`parse -> validate -> upsert`):
 python src\run_workflow.py attention_suite --retries 2
 ```
 
+Optional demo helper (shows `RUNNING` state longer):
+```powershell
+python src\run_workflow.py attention_suite --simulate-latency 2
+```
+
 3. Inspect workflow/task state:
 ```powershell
 cd db
@@ -152,5 +158,13 @@ Example suites included:
 - Stock is manually configured in `db/init/003_stock.sql`.
 - Fixed SKU list: `label_roll`, `sleeve_pack`, `neck_band`, `generic_label`.
 - Each PO consumes stock based on line-item description mapping.
+- Stock reservation is skipped when parsed `po_number` is missing (avoids collisions on invalid orders).
 - If stock is insufficient, task is flagged `out_of_stock` and fails (`FAILED`).
+
+## Attention Flags
+
+- `urgent`: subject contains `urgent`.
+- `due_soon`: due date is within N days.
+- `missing_fields`: required PO fields are missing.
+- `amount_exceeds_threshold`: PO total exceeds `ATTENTION_TOTAL_THRESHOLD` (default `15000`).
 

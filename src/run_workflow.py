@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -9,7 +10,7 @@ from workflow.connectors import DatabaseConnector, EmailConnector
 from workflow.dag import discover_purchase_orders, load_dependencies, topo_sort
 
 
-def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
+def run_workflow(suite: str | None = None, max_retries: int = 2, simulate_latency_seconds: float = 0.0) -> int:
     tests_root = Path(__file__).resolve().parent.parent / "tests"
     if suite:
         suite_dir = tests_root / suite
@@ -69,6 +70,8 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
             suite_dir = tests_root / suite_name
             write_suite_response_summary(suite_dir, suite_name, events)
 
+    latency_seconds = max(0.0, simulate_latency_seconds)
+
     for task_name in order:
         po = tasks[task_name]
         po_run_id = task_run_ids[task_name]
@@ -98,6 +101,8 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
             po.state = "RUNNING"
             print(f"{task_name}: PENDING -> RUNNING")
             db.transition_purchase_order(po_run_id, "RUNNING")
+            if latency_seconds > 0:
+                time.sleep(latency_seconds)
             success = False
             last_error_message: str | None = None
             last_reasons: list[str] = ["task_execution_failed"]
@@ -114,11 +119,12 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
                     reasons = needs_attention(po.req)
                     po_number_for_stock = (po.req.get("purchase_order") or {}).get("po_number") or ""
                     line_items_for_stock = (po.req.get("purchase_order") or {}).get("line_items") or []
-                    stock_ok, stock_details = db.reserve_stock(po_number_for_stock, line_items_for_stock)
-                    if not stock_ok:
-                        reasons = reasons + ["out_of_stock"]
-                        if stock_details:
-                            reasons.append(f"stock_detail:{';'.join(stock_details)}")
+                    if po_number_for_stock:
+                        stock_ok, stock_details = db.reserve_stock(po_number_for_stock, line_items_for_stock)
+                        if not stock_ok:
+                            reasons = reasons + ["out_of_stock"]
+                            if stock_details:
+                                reasons.append(f"stock_detail:{';'.join(stock_details)}")
 
                     fail_reasons = failure_flags(reasons)
                     if fail_reasons:
@@ -209,9 +215,21 @@ if __name__ == "__main__":
         default=2,
         help="Number of retries after first attempt for each task.",
     )
+    parser.add_argument(
+        "--simulate-latency",
+        type=float,
+        default=0.0,
+        help="Optional per-task sleep in seconds after entering RUNNING (demo visibility helper).",
+    )
     args = parser.parse_args()
     try:
-        raise SystemExit(run_workflow(suite=args.suite, max_retries=args.retries))
+        raise SystemExit(
+            run_workflow(
+                suite=args.suite,
+                max_retries=args.retries,
+                simulate_latency_seconds=args.simulate_latency,
+            )
+        )
     except Exception as exc:  # noqa: BLE001
         print(f"ERROR: {exc}")
         raise SystemExit(1)

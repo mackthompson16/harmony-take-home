@@ -1,4 +1,5 @@
 import json
+import os
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -7,11 +8,27 @@ from typing import Any
 from workflow.models import PurchaseOrder
 
 
+def _to_number(value: Any) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    text = str(value).strip()
+    if not text:
+        return None
+    normalized = text.replace("$", "").replace(",", "")
+    try:
+        return float(normalized)
+    except ValueError:
+        return None
+
+
 def needs_attention(payload: dict[str, Any], due_within_days: int = 7) -> list[str]:
     reasons: list[str] = []
     po = payload.get("purchase_order", {})
     email = payload.get("email", {})
     totals = po.get("totals", {})
+    threshold = float(os.getenv("ATTENTION_TOTAL_THRESHOLD", "15000"))
 
     due_date = po.get("due_date")
     if due_date:
@@ -32,6 +49,10 @@ def needs_attention(payload: dict[str, Any], due_within_days: int = 7) -> list[s
     ]
     if any(value in (None, "") for value in required):
         reasons.append("missing_fields")
+
+    total_value = _to_number(totals.get("total"))
+    if total_value is not None and total_value > threshold:
+        reasons.append("amount_exceeds_threshold")
 
     return reasons
 
