@@ -1,0 +1,10 @@
+{
+  "po_number": null,
+  "status": "PENDING",
+  "reasons": [
+    "waiting_on_upstream"
+  ],
+  "fields": {},
+  "timestamp": "2026-02-20T03:17:29.180034+00:00",
+  "error": "Dependencies not satisfied for order_fail_first/good_first: order_fail_first/bad_missing_po"
+}

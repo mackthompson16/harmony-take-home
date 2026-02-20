@@ -7,15 +7,11 @@ from typing import Any
 from workflow.models import PurchaseOrder
 
 
-def needs_attention(payload: dict[str, Any], amount_threshold: float = 15000.0, due_within_days: int = 7) -> list[str]:
+def needs_attention(payload: dict[str, Any], due_within_days: int = 7) -> list[str]:
     reasons: list[str] = []
     po = payload.get("purchase_order", {})
     email = payload.get("email", {})
     totals = po.get("totals", {})
-
-    total = totals.get("total")
-    if isinstance(total, (int, float)) and total > amount_threshold:
-        reasons.append("exceeds_threshold")
 
     due_date = po.get("due_date")
     if due_date:
@@ -41,7 +37,7 @@ def needs_attention(payload: dict[str, Any], amount_threshold: float = 15000.0, 
 
 
 def failure_flags(reasons: list[str]) -> list[str]:
-    fail_set = {"missing_fields", "exceeds_threshold"}
+    fail_set = {"missing_fields", "out_of_stock"}
     return [reason for reason in reasons if reason in fail_set]
 
 

@@ -1,5 +1,5 @@
 Suite: order_fail_first
 Status: FAILED
 Execution:
-1. bad_missing_po | FAILED | flags=task_execution_failed | po=N/A | error=null value in column "po_number" of relation "purchase_orders" violates not-null constraint DETAIL: Failing row conta...
-2. good_first | PENDING | flags=not_executed_due_to_upstream_failure | po=N/A
+1. bad_missing_po | FAILED | flags=missing_fields | po=N/A | error=missing_fields
+2. good_first | PENDING | flags=waiting_on_upstream | po=N/A | error=Dependencies not satisfied for order_fail_first/good_first: order_fail_first/bad_missing_po

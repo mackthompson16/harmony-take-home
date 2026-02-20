@@ -20,4 +20,25 @@ From project root:
 - Applies deterministic attention checks
 - Writes `alerts.json` in each processed `tests/test<n>/`
 - Persists transitions: `PENDING -> RUNNING -> SUCCESS|FAILED`
-- Stops on first failed purchase order
+- Continues independent tasks after failures; dependent tasks remain `PENDING`
+
+## 3) Visibility queries
+
+From `db/`:
+
+```powershell
+docker compose run --rm dbcli /work/db/queries/04_workflow_visibility.sql
+```
+
+This shows:
+- previous workflow runs
+- currently running workflows
+- currently running tasks
+- per-workflow task state counts
+- state transition history
+
+```powershell
+docker compose run --rm dbcli /work/db/queries/05_stock_visibility.sql
+```
+
+This shows current inventory and PO stock reservations.

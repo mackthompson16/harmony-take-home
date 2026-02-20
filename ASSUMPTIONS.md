@@ -23,8 +23,8 @@
     - metric:
     - `0`: `urgent`
     - `1`: `due_soon`
-    - `2`: all others (`no_flags`, `exceeds_threshold`, `missing_fields`)
-    - failure policy is separate: fail on `exceeds_threshold` or `missing_fields`
+    - `2`: all others (`no_flags`, `out_of_stock`, `missing_fields`)
+    - failure policy is separate: fail on `out_of_stock` or `missing_fields`
   3. PO `Order Date`
   4. alphabetical fallback
 - If a task fails, independent downstream tasks still run.
@@ -34,9 +34,13 @@
 ## Database
 
 - Schema inferred from `desc.txt` sample requirements.
-- Includes PO upsert, line items, alerts, workflow/task states, transition history.
+- Includes PO upsert, line items, alerts, workflow/task states, transition history, and stock tables.
 - Postgres is source of truth for state.
 - State model: `PENDING -> RUNNING -> SUCCESS|FAILED`.
+- State survives process restarts (not memory-only).
+- All discovered tasks are created in `purchase_order_runs` immediately, so blocked tasks are persisted as `PENDING` too.
+- Visibility is query-based: running vs historical runs in `db/queries/04_workflow_visibility.sql`.
+- Manual stock policy: fixed product stock in DB; each PO reserves stock; insufficient stock => `out_of_stock`.
 
 ## Runtime
 

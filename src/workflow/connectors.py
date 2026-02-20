@@ -1,5 +1,6 @@
 import json
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +46,15 @@ class DatabaseConnectorBase(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def set_purchase_order_request(
+        self,
+        purchase_order_run_id: int,
+        req_payload: dict[str, Any],
+        po_number: str | None = None,
+    ) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def set_attempts(self, purchase_order_run_id: int, attempts: int) -> None:
         raise NotImplementedError
 
@@ -64,6 +74,10 @@ class DatabaseConnectorBase(ABC):
 
     @abstractmethod
     def insert_alert(self, purchase_order_id: int, po_number: str, reasons: list[str], fields: dict[str, Any]) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
+    def reserve_stock(self, po_number: str, line_items: list[dict[str, Any]]) -> tuple[bool, list[str]]:
         raise NotImplementedError
 
 
@@ -100,6 +114,40 @@ class PostgresDatabaseConnector(DatabaseConnectorBase):
             return psycopg.connect(self.dsn)  # type: ignore[union-attr]
         return psycopg2.connect(self.dsn)  # type: ignore[union-attr]
 
+    def _ensure_stock_schema(self) -> None:
+        sql_statements = [
+            """
+            CREATE TABLE IF NOT EXISTS inventory_items (
+                sku TEXT PRIMARY KEY,
+                description TEXT NOT NULL,
+                available_qty INTEGER NOT NULL CHECK (available_qty >= 0),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS purchase_order_stock_usage (
+                po_number TEXT NOT NULL,
+                sku TEXT NOT NULL REFERENCES inventory_items(sku) ON DELETE CASCADE,
+                reserved_qty INTEGER NOT NULL CHECK (reserved_qty >= 0),
+                updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                PRIMARY KEY (po_number, sku)
+            );
+            """,
+            """
+            INSERT INTO inventory_items (sku, description, available_qty) VALUES
+                ('label_roll', 'General label rolls', 5000),
+                ('sleeve_pack', 'Shrink sleeve packs', 3000),
+                ('neck_band', 'Tamper neck bands', 4000),
+                ('generic_label', 'Fallback label stock', 2000)
+            ON CONFLICT (sku) DO NOTHING;
+            """,
+        ]
+        with self._connect() as conn:
+            with conn.cursor() as cur:
+                for sql in sql_statements:
+                    cur.execute(sql)
+            conn.commit()
+
     def create_workflow_run(self) -> int:
         sql = "INSERT INTO workflow_runs (state) VALUES ('PENDING') RETURNING id;"
         with self._connect() as conn:
@@ -125,6 +173,25 @@ class PostgresDatabaseConnector(DatabaseConnectorBase):
                 row = cur.fetchone()
             conn.commit()
         return int(row[0])
+
+    def set_purchase_order_request(
+        self,
+        purchase_order_run_id: int,
+        req_payload: dict[str, Any],
+        po_number: str | None = None,
+    ) -> None:
+        sql = """
+            UPDATE purchase_order_runs
+            SET
+                po_number = COALESCE(%s, po_number),
+                req = %s::jsonb,
+                updated_at = NOW()
+            WHERE id = %s;
+        """
+        with self._connect() as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, (po_number, json.dumps(req_payload), purchase_order_run_id))
+            conn.commit()
 
     def set_attempts(self, purchase_order_run_id: int, attempts: int) -> None:
         sql = "UPDATE purchase_order_runs SET attempts = %s, updated_at = NOW() WHERE id = %s;"
@@ -167,6 +234,80 @@ class PostgresDatabaseConnector(DatabaseConnectorBase):
             with conn.cursor() as cur:
                 cur.execute(sql, (purchase_order_id, po_number, reasons, json.dumps(fields)))
             conn.commit()
+
+    @staticmethod
+    def _sku_from_description(description: str) -> str:
+        normalized = description.lower()
+        if "shrink sleeve" in normalized or "sleeve" in normalized:
+            return "sleeve_pack"
+        if "neck band" in normalized or "bands" in normalized:
+            return "neck_band"
+        if "label" in normalized:
+            return "label_roll"
+        return "generic_label"
+
+    def reserve_stock(self, po_number: str, line_items: list[dict[str, Any]]) -> tuple[bool, list[str]]:
+        self._ensure_stock_schema()
+        sku_qty: dict[str, int] = defaultdict(int)
+        for item in line_items:
+            qty = int(item.get("qty", 0))
+            if qty <= 0:
+                continue
+            sku = self._sku_from_description(str(item.get("description", "")))
+            sku_qty[sku] += qty
+
+        if not sku_qty:
+            return True, []
+
+        try:
+            with self._connect() as conn:
+                with conn.cursor() as cur:
+                    plan: list[tuple[str, int, int]] = []
+                    insufficient: list[str] = []
+                    for sku, requested_qty in sku_qty.items():
+                        cur.execute("SELECT available_qty FROM inventory_items WHERE sku = %s FOR UPDATE;", (sku,))
+                        stock_row = cur.fetchone()
+                        if stock_row is None:
+                            insufficient.append(f"{sku}(unknown)")
+                            continue
+                        available_qty = int(stock_row[0])
+
+                        cur.execute(
+                            "SELECT reserved_qty FROM purchase_order_stock_usage WHERE po_number = %s AND sku = %s FOR UPDATE;",
+                            (po_number, sku),
+                        )
+                        reserved_row = cur.fetchone()
+                        existing_reserved = int(reserved_row[0]) if reserved_row else 0
+                        delta = requested_qty - existing_reserved
+                        if delta > available_qty:
+                            insufficient.append(f"{sku}(need_delta={delta},available={available_qty})")
+                            continue
+                        plan.append((sku, requested_qty, delta))
+
+                    if insufficient:
+                        conn.rollback()
+                        return False, insufficient
+
+                    for sku, requested_qty, delta in plan:
+                        if delta != 0:
+                            cur.execute(
+                                "UPDATE inventory_items SET available_qty = available_qty - %s, updated_at = NOW() WHERE sku = %s;",
+                                (delta, sku),
+                            )
+                        cur.execute(
+                            """
+                            INSERT INTO purchase_order_stock_usage (po_number, sku, reserved_qty, updated_at)
+                            VALUES (%s, %s, %s, NOW())
+                            ON CONFLICT (po_number, sku)
+                            DO UPDATE SET reserved_qty = EXCLUDED.reserved_qty, updated_at = NOW();
+                            """,
+                            (po_number, sku, requested_qty),
+                        )
+
+                conn.commit()
+            return True, []
+        except Exception as exc:  # noqa: BLE001
+            return False, [f"stock_error:{exc}"]
 
 
 # Backward-compatible names used by the workflow runner.

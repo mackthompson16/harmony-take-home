@@ -2,7 +2,8 @@
   "po_number": "PO-SUITE-0003",
   "status": "FAILED",
   "reasons": [
-    "exceeds_threshold"
+    "out_of_stock",
+    "stock_detail:label_roll(need_delta=10000,available=4100)"
   ],
   "fields": {
     "email": {
@@ -70,6 +71,6 @@
       }
     }
   },
-  "timestamp": "2026-02-19T22:36:06.442617+00:00",
-  "error": "exceeds_threshold"
+  "timestamp": "2026-02-20T03:17:28.521055+00:00",
+  "error": "out_of_stock"
 }

@@ -34,6 +34,9 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
     workflow_run_id = db.create_workflow_run()
     print(f"Workflow run {workflow_run_id} created. State: PENDING -> RUNNING")
     db.transition_workflow(workflow_run_id, "RUNNING")
+    task_run_ids: dict[str, int] = {}
+    for task_id in order:
+        task_run_ids[task_id] = db.create_purchase_order_run(workflow_run_id, tasks[task_id])
 
     completed: dict[str, str] = {}
     execution_events: list[dict[str, object]] = []
@@ -66,8 +69,9 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
             suite_dir = tests_root / suite_name
             write_suite_response_summary(suite_dir, suite_name, events)
 
-    for index, task_name in enumerate(order):
+    for task_name in order:
         po = tasks[task_name]
+        po_run_id = task_run_ids[task_name]
         print(f"TASK START: {task_name}")
         unmet = [dep for dep in po.dependencies if completed.get(dep) != "SUCCESS"]
         if unmet:
@@ -75,6 +79,14 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
             unmet_failed = any(completed.get(dep) == "FAILED" for dep in unmet)
             pending_flag = "waiting_on_upstream" if unmet_failed else "waiting_on_dependency"
             print(f"{task_name}: PENDING ({pending_flag})")
+            db.set_output(
+                po_run_id,
+                {
+                    "status": "PENDING",
+                    "reasons": [pending_flag],
+                    "error": message,
+                },
+            )
             write_alert(po, "PENDING", [pending_flag], message)
             po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
             record_event(task_name, "PENDING", [pending_flag], po_number, message)
@@ -83,16 +95,24 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
             continue
 
         try:
-            po.req = email.extract_purchase_order(po.txt_path)
-            po.json_path.parent.mkdir(parents=True, exist_ok=True)
-            po.json_path.write_text(json.dumps(po.req, indent=2), encoding="utf-8")
-
-            po_run_id = db.create_purchase_order_run(workflow_run_id, po)
             po.state = "RUNNING"
             print(f"{task_name}: PENDING -> RUNNING")
             db.transition_purchase_order(po_run_id, "RUNNING")
+            po.req = email.extract_purchase_order(po.txt_path)
+            po.json_path.parent.mkdir(parents=True, exist_ok=True)
+            po.json_path.write_text(json.dumps(po.req, indent=2), encoding="utf-8")
+            parsed_po_number = (po.req.get("purchase_order") or {}).get("po_number")
+            db.set_purchase_order_request(po_run_id, po.req, parsed_po_number)
 
             precheck_reasons = needs_attention(po.req)
+            precheck_failures = failure_flags(precheck_reasons)
+            po_number_for_stock = (po.req.get("purchase_order") or {}).get("po_number") or ""
+            line_items_for_stock = (po.req.get("purchase_order") or {}).get("line_items") or []
+            stock_ok, stock_details = db.reserve_stock(po_number_for_stock, line_items_for_stock)
+            if not stock_ok:
+                precheck_reasons = precheck_reasons + ["out_of_stock"]
+                if stock_details:
+                    precheck_reasons.append(f"stock_detail:{';'.join(stock_details)}")
             precheck_failures = failure_flags(precheck_reasons)
             if precheck_failures:
                 error_message = ",".join(precheck_failures)
@@ -151,6 +171,7 @@ def run_workflow(suite: str | None = None, max_retries: int = 2) -> int:
             po.state = "FAILED"
             completed[task_name] = "FAILED"
             workflow_failed = True
+            db.transition_purchase_order(po_run_id, "FAILED", message)
             write_alert(po, "FAILED", ["task_setup_failed"], message)
             po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
             record_event(task_name, "FAILED", ["task_setup_failed"], po_number, message)

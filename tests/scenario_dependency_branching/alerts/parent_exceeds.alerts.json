@@ -2,7 +2,8 @@
   "po_number": "PO-BRANCH-0002",
   "status": "FAILED",
   "reasons": [
-    "exceeds_threshold"
+    "out_of_stock",
+    "stock_detail:label_roll(need_delta=10000,available=4400)"
   ],
   "fields": {
     "email": {
@@ -63,6 +64,6 @@
       }
     }
   },
-  "timestamp": "2026-02-19T22:38:55.203546+00:00",
-  "error": "exceeds_threshold"
+  "timestamp": "2026-02-20T03:17:27.153146+00:00",
+  "error": "out_of_stock"
 }

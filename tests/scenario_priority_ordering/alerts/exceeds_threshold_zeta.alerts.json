@@ -2,7 +2,8 @@
   "po_number": "PO-PRIO-0004",
   "status": "FAILED",
   "reasons": [
-    "exceeds_threshold"
+    "out_of_stock",
+    "stock_detail:label_roll(need_delta=10000,available=4200)"
   ],
   "fields": {
     "email": {
@@ -63,6 +64,6 @@
       }
     }
   },
-  "timestamp": "2026-02-19T22:38:46.994725+00:00",
-  "error": "exceeds_threshold"
+  "timestamp": "2026-02-20T03:17:28.134641+00:00",
+  "error": "out_of_stock"
 }

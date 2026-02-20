@@ -5,7 +5,7 @@ Minimal workflow engine for purchase-order ingestion:
 - Upsert PO + line items into Postgres
 - Execute purchase-order tasks in DAG order
 - Persist workflow/task state transitions
-- Stop on first failed purchase order
+- Continue independent tasks when an unrelated task fails
 - Write per-file alert JSON for each processed test file
 
 ## Project Layout
@@ -24,7 +24,8 @@ harmony-take-home/
 |   |-- docker-compose.yml            # postgres + dbcli
 |   |-- init/
 |   |   |-- 001_schema.sql            # PO schema + upsert function
-|   |   `-- 002_workflow.sql          # workflow/task states + transitions
+|   |   |-- 002_workflow.sql          # workflow/task states + transitions
+|   |   `-- 003_stock.sql             # inventory + stock reservation tables
 |   `-- queries/
 |       |-- 01_load_test1_json.sql
 |       |-- 02_get_purchase_order.sql
@@ -77,6 +78,20 @@ cd db
 docker compose run --rm dbcli /work/db/queries/04_workflow_visibility.sql
 ```
 
+This shows:
+- previous workflow runs
+- currently running workflows (`state = RUNNING`)
+- currently running tasks (`purchase_order_runs.state = RUNNING`)
+- per-run task counts (`PENDING`, `RUNNING`, `SUCCESS`, `FAILED`)
+- recent task transitions
+
+State is persisted in Postgres, so run history survives process restarts. Each discovered task is inserted into `purchase_order_runs` at workflow start, even if it later stays blocked in `PENDING`.
+
+Inspect stock levels/consumption:
+```powershell
+docker compose run --rm dbcli /work/db/queries/05_stock_visibility.sql
+```
+
 Console output includes:
 - Task start/end
 - State transitions (`PENDING -> RUNNING -> SUCCESS|FAILED`)
@@ -122,8 +137,15 @@ python src\parse_txt.py tests\attention_suite\input\no_flags.txt
 Example suites included:
 - `tests/attention_suite/`: attention-flag scenarios
 - `tests/order_success_then_fail/`: good PO runs first, then failing PO
-- `tests/order_fail_first/`: same files but failing PO runs first (workflow stops before good PO)
+- `tests/order_fail_first/`: same files but failing PO runs first (dependent tasks stay pending)
 - `tests/scenario_priority_ordering/`: no dependencies; shows priority + PO-date + alpha ordering
 - `tests/scenario_dependency_branching/`: failed branch + independent branch continues
 - `tests/scenario_dependency_waiting/`: demonstrates `waiting_on_upstream` vs `waiting_on_dependency`
+
+## Stock Model
+
+- Stock is manually configured in `db/init/003_stock.sql`.
+- Fixed SKU list: `label_roll`, `sleeve_pack`, `neck_band`, `generic_label`.
+- Each PO consumes stock based on line-item description mapping.
+- If stock is insufficient, task is flagged `out_of_stock` and fails (`FAILED`).
 
