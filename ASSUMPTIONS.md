@@ -19,6 +19,7 @@
 - No dependency inference from parsed JSON.
 - Execution order: DAG constraints, then `urgent`, then `due_soon`, then PO `Order Date`, then alphabetical fallback.
 - Attention flags are deterministic: `urgent`, `due_soon`, `missing_fields`, `amount_exceeds_threshold`.
+- `due_soon` is evaluated against `order_date` + N days (not wall-clock date), so the same input produces the same result.
 - `amount_exceeds_threshold` uses `ATTENTION_TOTAL_THRESHOLD` (default `15000`).
 - Failure policy is separate: fail on `out_of_stock` or `missing_fields`.
 - If a task fails, independent downstream tasks still run.

@@ -1,9 +1,7 @@
 {
   "po_number": "PO-PRIO-0002",
   "status": "SUCCESS",
-  "reasons": [
-    "due_soon"
-  ],
+  "reasons": [],
   "fields": {
     "email": {
       "subject": "Purchase Order #PO-PRIO-0002",
@@ -63,5 +61,5 @@
       }
     }
   },
-  "timestamp": "2026-02-20T18:23:16.504150+00:00"
+  "timestamp": "2026-02-21T17:19:29.635814+00:00"
 }

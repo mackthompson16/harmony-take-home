@@ -14,11 +14,11 @@ Schema is auto-initialized from:
 ## 2) Workflow orchestration
 
 From project root:
-- Reads `tests/test*/test*.txt`
-- Extracts PO JSON and writes `test*.json`
+- Reads `tests/<suite>/input/*.(txt|pdf)` or `--input-file <path>`
+- Extracts PO JSON and writes `tests/<suite>/parsed/<file>.json` (or `parsed/<file>.json` for single-file mode)
 - Upserts PO rows in Postgres
 - Applies deterministic attention checks
-- Writes `alerts.json` in each processed `tests/test<n>/`
+- Writes `tests/<suite>/alerts/<file>.alerts.json` (and writes `po_alert.json` in single-file mode when flagged)
 - Persists transitions: `PENDING -> RUNNING -> SUCCESS|FAILED`
 - Continues independent tasks after failures; dependent tasks remain `PENDING`
 

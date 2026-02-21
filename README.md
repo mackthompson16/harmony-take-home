@@ -73,6 +73,14 @@ Run a single suite folder:
 python src\run_workflow.py attention_suite
 ```
 
+Run the required single-file demo from `sample_po_email.txt`:
+```powershell
+python src\run_workflow.py --input-file sample_po_email.txt
+```
+This writes:
+- `parsed/sample_po_email.json`
+- `po_alert.json` (only when attention flags exist)
+
 Set retries (`N`) for full task execution (`parse -> validate -> upsert`):
 ```powershell
 python src\run_workflow.py attention_suite --retries 2
@@ -126,8 +134,9 @@ python src\parse_txt.py tests\attention_suite\input\no_flags.txt
 - Parsed JSON: `tests/<suite_name>/parsed/<file>.json`
 - Alert file: `tests/<suite_name>/alerts/<file>.alerts.json`
 - Response summary: `tests/<suite_name>/response/summary.txt`
+- Single-file demo alert: `po_alert.json` next to the input file (only when flagged)
 
-`<file>.alerts.json` includes:
+`po_alert.json` / `<file>.alerts.json` includes:
 - `po_number`
 - `status` (`SUCCESS` or `FAILED`)
 - `reasons` (deterministic triggers or failure reason)
@@ -164,7 +173,7 @@ Example suites included:
 ## Attention Flags
 
 - `urgent`: subject contains `urgent`.
-- `due_soon`: due date is within N days.
+- `due_soon`: due date is within N days of `order_date` (deterministic for same payload).
 - `missing_fields`: required PO fields are missing.
 - `amount_exceeds_threshold`: PO total exceeds `ATTENTION_TOTAL_THRESHOLD` (default `15000`).
 

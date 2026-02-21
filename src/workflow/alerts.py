@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +23,18 @@ def _to_number(value: Any) -> float | None:
         return None
 
 
+def _parse_iso_date(value: Any) -> date | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return datetime.strptime(text, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
 def needs_attention(payload: dict[str, Any], due_within_days: int = 7) -> list[str]:
     reasons: list[str] = []
     po = payload.get("purchase_order", {})
@@ -30,11 +42,10 @@ def needs_attention(payload: dict[str, Any], due_within_days: int = 7) -> list[s
     totals = po.get("totals", {})
     threshold = float(os.getenv("ATTENTION_TOTAL_THRESHOLD", "15000"))
 
-    due_date = po.get("due_date")
-    if due_date:
-        due = datetime.strptime(due_date, "%Y-%m-%d").date()
-        if due <= (datetime.now(UTC).date() + timedelta(days=due_within_days)):
-            reasons.append("due_soon")
+    due = _parse_iso_date(po.get("due_date"))
+    order_date = _parse_iso_date(po.get("order_date"))
+    if due is not None and order_date is not None and due <= (order_date + timedelta(days=due_within_days)):
+        reasons.append("due_soon")
 
     subject = (email.get("subject") or "").lower()
     if "urgent" in subject:
@@ -74,7 +85,17 @@ def priority_rank(reasons: list[str]) -> int:
     return min(rank_map.get(reason, 2) for reason in reasons)
 
 
-def write_alert(po: PurchaseOrder, status: str, reasons: list[str], error_message: str | None = None) -> None:
+def write_alert(
+    po: PurchaseOrder,
+    status: str,
+    reasons: list[str],
+    error_message: str | None = None,
+    output_path: Path | None = None,
+    write_for_unflagged_success: bool = True,
+) -> bool:
+    if not reasons and status == "SUCCESS" and not write_for_unflagged_success:
+        return False
+
     po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
     payload = {
         "po_number": po_number,
@@ -85,8 +106,10 @@ def write_alert(po: PurchaseOrder, status: str, reasons: list[str], error_messag
     }
     if error_message:
         payload["error"] = error_message
-    po.alert_path.parent.mkdir(parents=True, exist_ok=True)
-    po.alert_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    alert_path = output_path or po.alert_path
+    alert_path.parent.mkdir(parents=True, exist_ok=True)
+    alert_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return True
 
 
 def write_suite_response_summary(

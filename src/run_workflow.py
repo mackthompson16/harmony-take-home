@@ -7,25 +7,53 @@ from pathlib import Path
 
 from workflow.alerts import failure_flags, needs_attention, write_alert, write_suite_response_summary
 from workflow.connectors import DatabaseConnector, EmailConnector
-from workflow.dag import discover_purchase_orders, load_dependencies, topo_sort
+from workflow.dag import (
+    derive_attention_priority_hint,
+    discover_purchase_orders,
+    extract_order_date_hint,
+    load_dependencies,
+    topo_sort,
+)
+from workflow.models import PurchaseOrder
 
 
-def run_workflow(suite: str | None = None, max_retries: int = 2, simulate_latency_seconds: float = 0.0) -> int:
+def run_workflow(
+    suite: str | None = None,
+    max_retries: int = 2,
+    simulate_latency_seconds: float = 0.0,
+    input_file: str | None = None,
+) -> int:
     tests_root = Path(__file__).resolve().parent.parent / "tests"
-    if suite:
-        suite_dir = tests_root / suite
-        if not suite_dir.exists() or not suite_dir.is_dir():
-            raise RuntimeError(f"Suite '{suite}' not found at {suite_dir}")
-    tasks = discover_purchase_orders(tests_root, suite_name=suite)
-    if not tasks:
+    single_input_mode = input_file is not None
+    if single_input_mode and suite is not None:
+        raise RuntimeError("Use either a suite argument or --input-file, not both.")
+    if single_input_mode:
+        input_path = Path(input_file).resolve()
+        if not input_path.exists() or not input_path.is_file():
+            raise RuntimeError(f"Input file not found: {input_path}")
+        tasks = {
+            f"demo/{input_path.stem}": PurchaseOrder(
+                name=f"demo/{input_path.stem}",
+                txt_path=input_path,
+                attention_priority_hint=derive_attention_priority_hint(input_path),
+                order_date_hint=extract_order_date_hint(input_path),
+            )
+        }
+    else:
         if suite:
-            raise RuntimeError(f"No test purchase-order files found in tests/{suite}/*.txt")
-        raise RuntimeError("No test purchase-order files found in tests/<suite_name>/*.txt")
+            suite_dir = tests_root / suite
+            if not suite_dir.exists() or not suite_dir.is_dir():
+                raise RuntimeError(f"Suite '{suite}' not found at {suite_dir}")
+        tasks = discover_purchase_orders(tests_root, suite_name=suite)
+        if not tasks:
+            if suite:
+                raise RuntimeError(f"No test purchase-order files found in tests/{suite}/*.txt")
+            raise RuntimeError("No test purchase-order files found in tests/<suite_name>/*.txt")
 
-    dependencies = load_dependencies(tests_root, list(tasks.keys()), suite_name=suite)
-    for name, deps in dependencies.items():
-        if name in tasks:
-            tasks[name].dependencies = deps
+        dependencies = load_dependencies(tests_root, list(tasks.keys()), suite_name=suite)
+        for name, deps in dependencies.items():
+            if name in tasks:
+                tasks[name].dependencies = deps
 
     order = topo_sort(tasks)
     dsn = os.getenv("POSTGRES_DSN", "postgresql://harmony:harmony@localhost:5433/harmony")
@@ -63,6 +91,8 @@ def run_workflow(suite: str | None = None, max_retries: int = 2, simulate_latenc
         )
 
     def write_all_suite_summaries() -> None:
+        if single_input_mode:
+            return
         grouped: dict[str, list[dict[str, object]]] = defaultdict(list)
         for event in execution_events:
             grouped[str(event["suite"])].append(event)
@@ -75,6 +105,7 @@ def run_workflow(suite: str | None = None, max_retries: int = 2, simulate_latenc
     for task_name in order:
         po = tasks[task_name]
         po_run_id = task_run_ids[task_name]
+        demo_alert_path = po.txt_path.parent / "po_alert.json" if single_input_mode else None
         print(f"TASK START: {task_name}")
         unmet = [dep for dep in po.dependencies if completed.get(dep) != "SUCCESS"]
         if unmet:
@@ -90,7 +121,7 @@ def run_workflow(suite: str | None = None, max_retries: int = 2, simulate_latenc
                     "error": message,
                 },
             )
-            write_alert(po, "PENDING", [pending_flag], message)
+            write_alert(po, "PENDING", [pending_flag], message, output_path=demo_alert_path)
             po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
             record_event(task_name, "PENDING", [pending_flag], po_number, message)
             completed[task_name] = "PENDING"
@@ -144,7 +175,15 @@ def run_workflow(suite: str | None = None, max_retries: int = 2, simulate_latenc
                     db.transition_purchase_order(po_run_id, "SUCCESS")
                     po.state = "SUCCESS"
                     completed[task_name] = "SUCCESS"
-                    write_alert(po, "SUCCESS", reasons)
+                    wrote_alert = write_alert(
+                        po,
+                        "SUCCESS",
+                        reasons,
+                        output_path=demo_alert_path,
+                        write_for_unflagged_success=not single_input_mode,
+                    )
+                    if single_input_mode and not wrote_alert and demo_alert_path is not None:
+                        demo_alert_path.unlink(missing_ok=True)
                     po_number = (po.req.get("purchase_order") or {}).get("po_number")
                     record_event(task_name, "SUCCESS", reasons, po_number)
                     print(f"{task_name}: RUNNING -> SUCCESS")
@@ -171,7 +210,7 @@ def run_workflow(suite: str | None = None, max_retries: int = 2, simulate_latenc
                 po.state = "FAILED"
                 completed[task_name] = "FAILED"
                 workflow_failed = True
-                write_alert(po, "FAILED", last_reasons, final_error)
+                write_alert(po, "FAILED", last_reasons, final_error, output_path=demo_alert_path)
                 po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
                 record_event(task_name, "FAILED", last_reasons, po_number, final_error)
                 print(f"{task_name}: RUNNING -> FAILED ({final_error})")
@@ -183,7 +222,7 @@ def run_workflow(suite: str | None = None, max_retries: int = 2, simulate_latenc
             completed[task_name] = "FAILED"
             workflow_failed = True
             db.transition_purchase_order(po_run_id, "FAILED", message)
-            write_alert(po, "FAILED", ["task_setup_failed"], message)
+            write_alert(po, "FAILED", ["task_setup_failed"], message, output_path=demo_alert_path)
             po_number = ((po.req or {}).get("purchase_order") or {}).get("po_number")
             record_event(task_name, "FAILED", ["task_setup_failed"], po_number, message)
             print(f"{task_name}: FAILED ({message})")
@@ -210,6 +249,11 @@ if __name__ == "__main__":
         help="Optional suite folder under tests/ (example: attention_suite).",
     )
     parser.add_argument(
+        "--input-file",
+        default=None,
+        help="Run the workflow for a single .txt/.pdf PO input file (writes po_alert.json when flagged).",
+    )
+    parser.add_argument(
         "--retries",
         type=int,
         default=2,
@@ -228,6 +272,7 @@ if __name__ == "__main__":
                 suite=args.suite,
                 max_retries=args.retries,
                 simulate_latency_seconds=args.simulate_latency,
+                input_file=args.input_file,
             )
         )
     except Exception as exc:  # noqa: BLE001

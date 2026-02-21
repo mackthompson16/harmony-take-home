@@ -90,7 +90,7 @@ class TxtEmailConnector(EmailConnectorBase):
             return path
         if self.default_path is not None:
             return self.default_path
-        return Path.cwd() / "tests" / "test1" / "test1.txt"
+        return Path.cwd() / "tests" / "attention_suite" / "input" / "no_flags.txt"
 
     def read_text(self, path: Path | None = None) -> str:
         resolved = self._resolve_path(path)
